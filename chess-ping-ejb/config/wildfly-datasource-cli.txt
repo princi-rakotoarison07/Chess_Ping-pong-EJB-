@@ -1,0 +1,17 @@
+/subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
+
+/subsystem=datasources/data-source=ChessPingDS:add(
+    jndi-name=java:/jboss/datasources/ChessPingDS,
+    enabled=true,
+    driver-name=postgresql,
+    connection-url=jdbc:postgresql://localhost:5432/chess_ping,
+    user-name=postgres,
+    password=postgres,
+    min-pool-size=5,
+    max-pool-size=20,
+    validate-on-match=true,
+    background-validation=false,
+    exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLExceptionSorter
+)
+
+:reload

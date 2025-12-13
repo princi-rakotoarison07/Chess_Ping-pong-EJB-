@@ -1,0 +1,170 @@
+Chess-Ping-Java/
+  README.md                              (description projet, instructions build/deploy)
+  ARCHITECTURE_DIAGRAM.md                (architecture globale : JavaFX + EJB + MySQL)
+  
+  pom.xml                                (Maven - gestion dépendances globale)
+  
+  chess-ping-ejb/                        (Module EJB - Logique métier + accès données)
+    pom.xml                              (dépendances : JavaEE-API, MySQL driver)
+    src/
+      main/
+        java/
+          com/
+            chessping/
+              ejb/
+                entity/                  (Entités JPA mappées aux tables existantes)
+                  PieceType.java         (@Entity - table piece_type)
+                  Player.java            (@Entity - table player)
+                  Game.java              (@Entity - table game)
+                  GamePieceState.java    (@Entity - table game_piece_state)
+                model/                   (Classes métier non-persistées)
+                  Piece.java             (classe logique, pas @Entity)
+                  Board.java             (représentation plateau en mémoire)
+                  Move.java              (représentation coup)
+                pieces/                  (Logique métier pièces - héritent de Piece)
+                  King.java              (extends Piece)
+                  Queen.java             (extends Piece)
+                  Rook.java              (extends Piece)
+                  Bishop.java            (extends Piece)
+                  Knight.java            (extends Piece)
+                  Pawn.java              (extends Piece)
+                session/                 (EJB Session Beans)
+                  GameEJB.java           (@Stateless - CRUD game, logique partie)
+                  PieceTypeEJB.java      (@Stateless - CRUD piece_type, config)
+                  PlayerEJB.java         (@Stateless - CRUD player)
+                  GameStateEJB.java      (@Stateless - CRUD game_piece_state, save/load)
+                  MoveEJB.java           (@Stateless - validation et exécution coups)
+                service/                 (Services métier complexes)
+                  GameService.java       (orchestration logique jeu)
+                  BoardService.java      (gestion plateau, reconstruction depuis DB)
+                  MoveValidationService.java (règles échecs)
+                rest/                    (API REST exposant les EJB)
+                  GameResource.java      (@Path("/games"))
+                  PieceTypeResource.java (@Path("/piece-types"))
+                  PlayerResource.java    (@Path("/players"))
+                  GameStateResource.java (@Path("/game-states"))
+                  MoveResource.java      (@Path("/moves"))
+                util/
+                  GameConverter.java     (conversion Game + GamePieceState -> Board)
+        resources/
+          META-INF/
+            persistence.xml              (config JPA + datasource MySQL)
+    
+  chess-ping-javafx/                     (Module JavaFX - Interface client)
+    pom.xml                              (dépendances : JavaFX, HTTP client, JSON)
+    src/
+      main/
+        java/
+          com/
+            chessping/
+              client/
+                MainApp.java             (Point d'entrée JavaFX, extends Application)
+                config/
+                  AppConfig.java         (config locale interface)
+                core/
+                  GameController.java    (contrôleur jeu local)
+                  NetworkGameController.java (contrôleur jeu réseau)
+                  GameState.java         (état courant partie en mémoire)
+                  GameMode.java          (enum: LOCAL, SERVER, CLIENT)
+                chess/
+                  board/
+                    BoardView.java       (affichage plateau JavaFX)
+                    SquareView.java      (affichage case)
+                  model/                 (DTOs côté client)
+                    PieceDTO.java        (représentation pièce)
+                    GameDTO.java
+                    PlayerDTO.java
+                    PieceTypeDTO.java
+                  moves/
+                    MoveValidator.java   (validation côté client)
+                    MoveHistory.java     (historique local)
+                pingpong/
+                  PingPongController.java
+                  Paddle.java
+                  Ball.java
+                service/                 (Communication avec EJB via REST)
+                  RestClient.java        (client HTTP générique)
+                  GameService.java       (GET/POST/PUT /games)
+                  PieceTypeService.java  (GET /piece-types)
+                  PlayerService.java     (GET/POST /players)
+                  GameStateService.java  (GET/POST /game-states - save/load)
+                  MoveService.java       (POST /moves - envoi coup)
+                ui/
+                  controller/
+                    RootLayoutController.java
+                    MainMenuController.java
+                    GameViewController.java
+                    ConfigurationController.java (gestion PieceType)
+                    NetworkSetupController.java
+                    SettingsController.java
+                    SaveLoadController.java (interface save/load)
+                  util/
+                    DialogUtil.java
+                    FXMLUtil.java
+                network/                 (Socket TCP/IP pour jeu temps réel optionnel)
+                  SocketClient.java
+                  SocketServer.java
+                  MessageHandler.java
+                utils/
+                  FileUtils.java
+                  ImageUtils.java
+                  JsonUtils.java
+        resources/
+          fxml/
+            RootLayout.fxml
+            MainMenu.fxml
+            GameView.fxml
+            Configuration.fxml
+            NetworkSetup.fxml
+            SaveLoad.fxml
+            Settings.fxml
+          css/
+            style.css
+            game-style.css
+          images/
+            pieces/
+              king_white.png
+              king_black.png
+              queen_white.png
+              queen_black.png
+              rook_white.png
+              rook_black.png
+              bishop_white.png
+              bishop_black.png
+              knight_white.png
+              knight_black.png
+              pawn_white.png
+              pawn_black.png
+            board/
+              board_background.png
+            ui/
+              paddle_left.png
+              paddle_right.png
+              ball.png
+          config/
+            chess_config.json
+          i18n/
+            messages_fr.properties
+            messages_en.properties
+
+  deploy.bat                             (Script déploiement EJB vers WildFly)
+  deploy.sh                              (Version Linux/Mac du script)
+  
+  config/
+    wildfly-datasource.xml               (Config datasource MySQL pour WildFly)
+    application.properties               (Config globale application)
+  
+  database/
+    schema.sql                           (Script création tables MySQL fourni)
+    data.sql                             (INSERT piece_type déjà fourni)
+    README.md                            (instructions création DB)
+  
+  docs/
+    API_DOCUMENTATION.md                 (Documentation endpoints REST)
+    DEPLOYMENT_GUIDE.md                  (Guide déploiement WildFly + MySQL)
+    DATABASE_SCHEMA.md                   (Explication structure DB)
+    USER_GUIDE.md                        (Guide utilisateur)
+
+  lib/                                   (Bibliothèques externes si nécessaire)
+
+  .gitignore
