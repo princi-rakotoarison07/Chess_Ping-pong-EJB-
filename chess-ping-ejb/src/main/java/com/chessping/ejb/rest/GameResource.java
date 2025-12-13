@@ -3,9 +3,9 @@ package com.chessping.ejb.rest;
 import com.chessping.ejb.entity.Game;
 import com.chessping.ejb.session.GameEJB;
 
-import javax.ejb.EJB;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import jakarta.ejb.EJB;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.Map;
 
 @Path("/games")

@@ -17,7 +17,9 @@ if not exist "%WAR_FILE%" (
     exit /b 1
 )
 
+echo Copying "%WAR_FILE%" to "%WILDFLY_DEPLOY%\chess-ping-ejb.war"
 copy /Y "%WAR_FILE%" "%WILDFLY_DEPLOY%\chess-ping-ejb.war"
 
 echo Deploiement EJB termine.
+pause
 endlocal

@@ -1,6 +1,6 @@
 package com.chessping.ejb.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "piece_type")

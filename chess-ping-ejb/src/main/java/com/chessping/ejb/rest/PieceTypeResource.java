@@ -3,9 +3,9 @@ package com.chessping.ejb.rest;
 import com.chessping.ejb.entity.PieceType;
 import com.chessping.ejb.session.PieceTypeEJB;
 
-import javax.ejb.EJB;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import jakarta.ejb.EJB;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 @Path("/piece-types")

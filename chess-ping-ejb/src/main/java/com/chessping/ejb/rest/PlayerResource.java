@@ -3,9 +3,9 @@ package com.chessping.ejb.rest;
 import com.chessping.ejb.entity.Player;
 import com.chessping.ejb.session.PlayerEJB;
 
-import javax.ejb.EJB;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import jakarta.ejb.EJB;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;

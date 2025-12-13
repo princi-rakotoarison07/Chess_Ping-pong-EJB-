@@ -3,9 +3,9 @@ package com.chessping.ejb.rest;
 import com.chessping.ejb.entity.GamePieceState;
 import com.chessping.ejb.session.GameStateEJB;
 
-import javax.ejb.EJB;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import jakarta.ejb.EJB;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
 

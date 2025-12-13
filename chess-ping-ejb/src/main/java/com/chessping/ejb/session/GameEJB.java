@@ -5,10 +5,10 @@ import com.chessping.ejb.entity.GamePieceState;
 import com.chessping.ejb.entity.PieceType;
 import com.chessping.ejb.entity.Player;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;

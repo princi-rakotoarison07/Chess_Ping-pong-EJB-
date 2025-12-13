@@ -1,0 +1,13 @@
+com\chessping\ejb\rest\ChessPingApplication.class
+com\chessping\ejb\entity\PieceType.class
+com\chessping\ejb\session\PlayerEJB.class
+com\chessping\ejb\rest\GameResource.class
+com\chessping\ejb\entity\Player.class
+com\chessping\ejb\entity\GamePieceState.class
+com\chessping\ejb\session\GameStateEJB.class
+com\chessping\ejb\entity\Game.class
+com\chessping\ejb\rest\PieceTypeResource.class
+com\chessping\ejb\session\GameEJB.class
+com\chessping\ejb\rest\GameStateResource.class
+com\chessping\ejb\session\PieceTypeEJB.class
+com\chessping\ejb\rest\PlayerResource.class
