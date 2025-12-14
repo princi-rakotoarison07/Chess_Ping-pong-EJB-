@@ -3,6 +3,7 @@ package com.chessping.client.ui;
 import com.chessping.client.MainApp;
 import com.chessping.client.chess.model.PieceTypeDTO;
 import com.chessping.client.service.PieceTypeService;
+import com.chessping.client.session.GameSession;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,7 +22,7 @@ import java.util.List;
 public class ConfigurationController {
 
     @FXML
-    private ComboBox<Integer> rowsCombo;
+    private ComboBox<Integer> colsCombo;
 
     @FXML
     private TableView<PieceTypeDTO> whiteTable;
@@ -55,9 +56,9 @@ public class ConfigurationController {
 
     @FXML
     private void initialize() {
-        // 2,4,6,8 lignes comme dans la version Python
-        rowsCombo.setItems(FXCollections.observableArrayList(2, 4, 6, 8));
-        rowsCombo.getSelectionModel().select(Integer.valueOf(2));
+        // 2,4,6,8 colonnes
+        colsCombo.setItems(FXCollections.observableArrayList(2, 4, 6, 8));
+        colsCombo.getSelectionModel().select(Integer.valueOf(8));
 
         // Configuration des colonnes : on affiche nom, nombre (calculé) et vie max
         whiteTypeColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
@@ -74,28 +75,28 @@ public class ConfigurationController {
             whiteTable.setItems(obs);
             blackTable.setItems(FXCollections.observableArrayList(pieces));
 
-            // Calcul initial des nombres pour 2 lignes
-            updateCountsForRows(2, pieces);
+            // Calcul initial des nombres pour 8 colonnes
+            updateCountsForCols(8, pieces);
         } catch (IOException | InterruptedException e) {
             warningLabel.setText("Erreur de chargement des pièces: " + e.getMessage());
             e.printStackTrace();
         }
 
-        // Recalcule les nombres si l'utilisateur change le nombre de lignes
-        rowsCombo.getSelectionModel().selectedItemProperty().addListener((obsSel, oldVal, newVal) -> {
+        // Recalcule les nombres si l'utilisateur change le nombre de colonnes
+        colsCombo.getSelectionModel().selectedItemProperty().addListener((obsSel, oldVal, newVal) -> {
             if (newVal != null && whiteTable.getItems() != null) {
-                updateCountsForRows(newVal, whiteTable.getItems());
+                updateCountsForCols(newVal, whiteTable.getItems());
                 // reflète aussi sur la table noire
                 if (blackTable.getItems() != null) {
-                    updateCountsForRows(newVal, blackTable.getItems());
+                    updateCountsForCols(newVal, blackTable.getItems());
                 }
             }
         });
     }
 
-    private void updateCountsForRows(int rows, List<PieceTypeDTO> pieces) {
-        // Reprise de la logique Python _reset_defaults_for_rows
-        int limit = 2 * rows;
+    private void updateCountsForCols(int cols, List<PieceTypeDTO> pieces) {
+        // Limite totale de pièces par couleur = nombre de colonnes
+        int limit = cols;
 
         // Comptes standard d'un jeu d'échecs par couleur
         var standardCounts = java.util.Map.of(
@@ -142,12 +143,14 @@ public class ConfigurationController {
 
     @FXML
     private void onStartGame() {
-        Integer rows = rowsCombo.getValue();
-        if (rows == null) rows = 2;
+        Integer cols = colsCombo.getValue();
+        if (cols == null) cols = 8;
+
+        GameSession.setBoardCols(cols);
 
         // Petit résumé textuel de la config auto (comme feedback visuel)
         StringBuilder sb = new StringBuilder();
-        sb.append("Configuration pour ").append(rows).append(" lignes : ");
+        sb.append("Configuration pour ").append(cols).append(" colonnes : ");
 
         if (whiteTable.getItems() != null) {
             for (PieceTypeDTO dto : whiteTable.getItems()) {
@@ -169,7 +172,7 @@ public class ConfigurationController {
             Scene scene = new Scene(root, 900, 600);
             scene.getStylesheets().add(MainApp.class.getResource("/css/styles.css").toExternalForm());
 
-            Stage stage = (Stage) rowsCombo.getScene().getWindow();
+            Stage stage = (Stage) colsCombo.getScene().getWindow();
             stage.setScene(scene);
         } catch (Exception e) {
             warningLabel.setText("Erreur lors du lancement de la partie: " + e.getMessage());

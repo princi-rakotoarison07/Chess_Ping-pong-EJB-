@@ -10,7 +10,9 @@ public class GameSession {
     public static Player playerWhite;
     public static Player playerBlack;
 
-    public static int boardRows = 2; // 2,4,6,8
+    public static final int BOARD_ROWS = 8; // hauteur fixe
+    public static int boardCols = 8; // 2,4,6,8 colonnes
+    public static int boardRows = 2; // laissé pour compat, mais non utilisé pour le rendu
     public static String firstServer = "WHITE"; // "WHITE" ou "BLACK"
     public static double speedMultiplier = 1.0;
 
@@ -23,6 +25,7 @@ public class GameSession {
     public static void reset() {
         playerWhite = null;
         playerBlack = null;
+        boardCols = 8;
         boardRows = 2;
         firstServer = "WHITE";
         speedMultiplier = 1.0;
@@ -30,5 +33,15 @@ public class GameSession {
         blackPieceCounts.clear();
         customMaxHealth.clear();
         gameId = null;
+    }
+
+    public static void setBoardCols(int cols) {
+        if (cols <= 0) {
+            boardCols = 2;
+        } else if (cols > 8) {
+            boardCols = 8;
+        } else {
+            boardCols = cols;
+        }
     }
 }

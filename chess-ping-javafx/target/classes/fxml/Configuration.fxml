@@ -10,8 +10,8 @@
             <padding><Insets top="10" bottom="10" left="10" right="10"/></padding>
             <children>
                 <Label text="Configuration de la partie" style="-fx-text-fill: white; -fx-font-size: 20px;"/>
-                <Label text="Lignes:" style="-fx-text-fill: white;"/>
-                <ComboBox fx:id="rowsCombo" prefWidth="100"/>
+                <Label text="Colonnes:" style="-fx-text-fill: white;"/>
+                <ComboBox fx:id="colsCombo" prefWidth="100"/>
             </children>
         </HBox>
     </top>
