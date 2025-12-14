@@ -7,6 +7,8 @@ public class PieceTypeDTO {
     private Integer maxHealth;
     private Integer attack;
     private Integer defense;
+    // Nombre de pièces utilisées pour ce match (calculé côté client, non stocké en base)
+    private Integer count;
 
     public Integer getId() {
         return id;
@@ -54,5 +56,13 @@ public class PieceTypeDTO {
 
     public void setDefense(Integer defense) {
         this.defense = defense;
+    }
+
+    public Integer getCount() {
+        return count;
+    }
+
+    public void setCount(Integer count) {
+        this.count = count;
     }
 }

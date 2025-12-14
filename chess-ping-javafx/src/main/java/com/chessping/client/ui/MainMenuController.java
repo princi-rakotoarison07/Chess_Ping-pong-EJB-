@@ -40,12 +40,12 @@ public class MainMenuController {
 
     @FXML
     private void onLocalGame(ActionEvent event) {
-        loadScene("Configuration.fxml");
+        loadScene("PlayerSelection.fxml");
     }
 
     @FXML
     private void onCreateServer(ActionEvent event) {
-        loadScene("Configuration.fxml");
+        loadScene("PlayerSelection.fxml");
     }
 
     @FXML

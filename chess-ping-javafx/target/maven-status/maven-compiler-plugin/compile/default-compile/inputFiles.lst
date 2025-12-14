@@ -1,7 +1,14 @@
 D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\chess\model\PieceTypeDTO.java
 D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\core\GameMode.java
 D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\MainApp.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\model\GamePieceStateDTO.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\model\Player.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\service\GameStateService.java
 D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\service\PieceTypeService.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\service\PlayerService.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\session\GameSession.java
 D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\ui\ConfigurationController.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\ui\GameViewController.java
 D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\ui\MainMenuController.java
 D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\ui\NetworkSetupController.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-javafx\src\main\java\com\chessping\client\ui\PlayerSelectionController.java

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chessping.client.ui.PlayerSelectionController">
+    <center>
+        <HBox spacing="40" alignment="CENTER">
+            <padding>
+                <Insets top="20" bottom="20" left="20" right="20"/>
+            </padding>
+            <children>
+                <!-- Joueur Blanc -->
+                <VBox spacing="10" prefWidth="350">
+                    <children>
+                        <Label text="Joueur Blanc" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                        <ComboBox fx:id="whitePlayerCombo" prefWidth="300"/>
+                        <TextField fx:id="whiteNewNameField" promptText="Nouveau joueur blanc"/>
+                        <Button text="Créer nouveau joueur" onAction="#onCreateWhitePlayer"/>
+                    </children>
+                </VBox>
+
+                <!-- Joueur Noir -->
+                <VBox spacing="10" prefWidth="350">
+                    <children>
+                        <Label text="Joueur Noir" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                        <ComboBox fx:id="blackPlayerCombo" prefWidth="300"/>
+                        <TextField fx:id="blackNewNameField" promptText="Nouveau joueur noir"/>
+                        <Button text="Créer nouveau joueur" onAction="#onCreateBlackPlayer"/>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER">
+            <padding>
+                <Insets top="10" bottom="20" left="10" right="10"/>
+            </padding>
+            <children>
+                <Button text="Démarrer la partie" onAction="#onStartGame"/>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

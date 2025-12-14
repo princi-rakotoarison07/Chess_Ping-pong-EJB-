@@ -24,7 +24,8 @@
                         <Label text="Blancs" style="-fx-text-fill: white; -fx-font-weight: bold;"/>
                         <TableView fx:id="whiteTable" prefHeight="300">
                             <columns>
-                                <TableColumn fx:id="whiteTypeColumn" text="Type" prefWidth="160"/>
+                                <TableColumn fx:id="whiteTypeColumn" text="Type" prefWidth="140"/>
+                                <TableColumn fx:id="whiteCountColumn" text="Nombre" prefWidth="80"/>
                                 <TableColumn fx:id="whiteLifeColumn" text="Vie" prefWidth="80"/>
                             </columns>
                         </TableView>
@@ -35,7 +36,8 @@
                         <Label text="Noirs" style="-fx-text-fill: white; -fx-font-weight: bold;"/>
                         <TableView fx:id="blackTable" prefHeight="300">
                             <columns>
-                                <TableColumn fx:id="blackTypeColumn" text="Type" prefWidth="160"/>
+                                <TableColumn fx:id="blackTypeColumn" text="Type" prefWidth="140"/>
+                                <TableColumn fx:id="blackCountColumn" text="Nombre" prefWidth="80"/>
                                 <TableColumn fx:id="blackLifeColumn" text="Vie" prefWidth="80"/>
                             </columns>
                         </TableView>
