@@ -1,0 +1,8 @@
+com\chessping\client\service\PieceTypeService.class
+com\chessping\client\chess\model\PieceTypeDTO.class
+com\chessping\client\ui\MainMenuController.class
+com\chessping\client\core\GameMode.class
+com\chessping\client\service\PieceTypeService$1.class
+com\chessping\client\MainApp.class
+com\chessping\client\ui\ConfigurationController.class
+com\chessping\client\ui\NetworkSetupController.class

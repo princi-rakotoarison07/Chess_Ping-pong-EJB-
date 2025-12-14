@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chessping.client.ui.GameViewController">
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="game-header">
+            <children>
+                <Label fx:id="scoreLabel" text="Score" style="-fx-text-fill: white;"/>
+                <Label fx:id="statusLabel" text="Status" style="-fx-text-fill: white;"/>
+            </children>
+        </HBox>
+    </top>
+
+    <center>
+        <StackPane>
+            <children>
+                <Canvas fx:id="gameCanvas" width="900" height="600" />
+            </children>
+        </StackPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER" styleClass="game-footer">
+            <children>
+                <Label text="Footer configuration" style="-fx-text-fill: white;"/>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

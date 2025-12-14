@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chessping.client.ui.ConfigurationController">
+    <top>
+        <HBox spacing="10" alignment="CENTER" BorderPane.alignment="CENTER">
+            <padding><Insets top="10" bottom="10" left="10" right="10"/></padding>
+            <children>
+                <Label text="Configuration de la partie" style="-fx-text-fill: white; -fx-font-size: 20px;"/>
+                <Label text="Lignes:" style="-fx-text-fill: white;"/>
+                <ComboBox fx:id="rowsCombo" prefWidth="100"/>
+            </children>
+        </HBox>
+    </top>
+
+    <center>
+        <SplitPane>
+            <items>
+                <VBox spacing="5">
+                    <children>
+                        <Label text="Blancs" style="-fx-text-fill: white; -fx-font-weight: bold;"/>
+                        <TableView fx:id="whiteTable" prefHeight="300">
+                            <columns>
+                                <TableColumn fx:id="whiteTypeColumn" text="Type" prefWidth="160"/>
+                                <TableColumn fx:id="whiteLifeColumn" text="Vie" prefWidth="80"/>
+                            </columns>
+                        </TableView>
+                    </children>
+                </VBox>
+                <VBox spacing="5">
+                    <children>
+                        <Label text="Noirs" style="-fx-text-fill: white; -fx-font-weight: bold;"/>
+                        <TableView fx:id="blackTable" prefHeight="300">
+                            <columns>
+                                <TableColumn fx:id="blackTypeColumn" text="Type" prefWidth="160"/>
+                                <TableColumn fx:id="blackLifeColumn" text="Vie" prefWidth="80"/>
+                            </columns>
+                        </TableView>
+                    </children>
+                </VBox>
+            </items>
+        </SplitPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <padding><Insets top="10" bottom="10" left="10" right="10"/></padding>
+            <children>
+                <Label fx:id="warningLabel" textFill="red"/>
+                <Button text="Lancer la partie" onAction="#onStartGame"/>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

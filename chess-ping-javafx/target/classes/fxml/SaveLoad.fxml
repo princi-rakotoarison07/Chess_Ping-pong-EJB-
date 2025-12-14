@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.chessping.client.ui.SaveLoadController"
+      spacing="10" alignment="CENTER">
+    <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+    <children>
+        <Label text="Sauvegarde / Chargement" style="-fx-font-size: 24px; -fx-text-fill: white;"/>
+        <ListView fx:id="saveList" prefWidth="300" prefHeight="200"/>
+        <HBox spacing="10" alignment="CENTER">
+            <children>
+                <Button text="Sauvegarder" onAction="#onSave"/>
+                <Button text="Charger" onAction="#onLoad"/>
+            </children>
+        </HBox>
+        <Label fx:id="messageLabel" textFill="white"/>
+    </children>
+</VBox>
