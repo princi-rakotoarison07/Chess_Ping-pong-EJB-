@@ -4,6 +4,7 @@ import com.chessping.client.MainApp;
 import com.chessping.client.model.GamePieceStateDTO;
 import com.chessping.client.service.GameStateService;
 import com.chessping.client.session.GameSession;
+import javafx.application.Platform;
 import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -14,6 +15,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.control.Label;
 import javafx.scene.text.Font;
@@ -99,6 +101,9 @@ public class GameViewController {
     private int scoreBlue = 0;
     private long resumeTimeNanos = 0L; // si now < resumeTimeNanos, la balle est en pause
 
+    private static final long PIECE_HIT_COOLDOWN_NANOS = 250_000_000L;
+    private final Map<Integer, Long> lastHitByPiece = new HashMap<>();
+
     @FXML
     private void initialize() {
         int cols = GameSession.boardCols > 0 ? GameSession.boardCols : BOARD_COLS;
@@ -143,7 +148,7 @@ public class GameViewController {
         // gestion des touches pour les paddles (Q/D pour paddle rouge, flèches gauche/droite pour paddle bleu)
         gameCanvas.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
-                newScene.setOnKeyPressed(e -> {
+                newScene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
                     if (e.getCode() == KeyCode.SPACE) {
                         tryStartServe();
                         return;
@@ -158,6 +163,9 @@ public class GameViewController {
                         paddleBlueX += PADDLE_SPEED;
                     }
                 });
+
+                // Assurer le focus clavier sur le canvas une fois la Scene attachée
+                Platform.runLater(() -> gameCanvas.requestFocus());
             }
         });
 
@@ -167,7 +175,13 @@ public class GameViewController {
             }
         });
 
-        gameCanvas.setOnMouseClicked(e -> tryStartServe());
+        gameCanvas.setOnMouseClicked(e -> {
+            gameCanvas.requestFocus();
+            tryStartServe();
+        });
+
+        gameCanvas.setFocusTraversable(true);
+        Platform.runLater(() -> gameCanvas.requestFocus());
 
         timer.start();
     }
@@ -316,25 +330,54 @@ public class GameViewController {
         }
     }
 
-    private List<String> buildPieceOrder(Map<String, Integer> pieceCounts) {
-        // Ordre strict (sans symétrie, sans trous):
-        // KING -> QUEEN -> ROOK -> KNIGHT -> BISHOP
-        // Chaque type est répété exactement selon sa quantité configurée.
-        List<String> ordered = new ArrayList<>();
+    private List<String> buildBackRankLayout(int cols) {
+        // Layout "type échecs" adapté au nombre de colonnes.
+        // Remarque: ce layout exprime seulement les préférences de placement.
+        // Si une pièce n'est pas disponible, on remplira avec une autre pièce disponible.
+        if (cols <= 0) return java.util.Collections.emptyList();
 
-        int king = getCountIgnoreCase(pieceCounts, "KING");
-        int queen = getCountIgnoreCase(pieceCounts, "QUEEN");
-        int rook = getCountIgnoreCase(pieceCounts, "ROOK");
-        int knight = getCountIgnoreCase(pieceCounts, "KNIGHT");
-        int bishop = getCountIgnoreCase(pieceCounts, "BISHOP");
+        if (cols == 2) {
+            return java.util.List.of("ROOK", "ROOK");
+        }
+        if (cols == 4) {
+            // cas exceptionnel demandé
+            return java.util.List.of("ROOK", "QUEEN", "KING", "ROOK");
+        }
+        if (cols == 6) {
+            return java.util.List.of("ROOK", "KNIGHT", "QUEEN", "KING", "KNIGHT", "ROOK");
+        }
+        // 8 (standard)
+        return java.util.List.of("ROOK", "KNIGHT", "BISHOP", "QUEEN", "KING", "BISHOP", "KNIGHT", "ROOK");
+    }
 
-        for (int i = 0; i < king; i++) ordered.add("KING");
-        for (int i = 0; i < queen; i++) ordered.add("QUEEN");
-        for (int i = 0; i < rook; i++) ordered.add("ROOK");
-        for (int i = 0; i < knight; i++) ordered.add("KNIGHT");
-        for (int i = 0; i < bishop; i++) ordered.add("BISHOP");
+    private java.util.Map<String, Integer> normalizedCounts(Map<String, Integer> pieceCounts) {
+        java.util.Map<String, Integer> out = new java.util.HashMap<>();
+        if (pieceCounts == null) return out;
+        for (var e : pieceCounts.entrySet()) {
+            if (e.getKey() == null) continue;
+            String k = e.getKey().toUpperCase();
+            int v = e.getValue() != null ? e.getValue() : 0;
+            out.put(k, Math.max(0, v));
+        }
+        return out;
+    }
 
-        return ordered;
+    private String takeIfAvailable(java.util.Map<String, Integer> counts, String type) {
+        if (counts == null || type == null) return null;
+        String key = type.toUpperCase();
+        int v = counts.getOrDefault(key, 0);
+        if (v <= 0) return null;
+        counts.put(key, v - 1);
+        return key;
+    }
+
+    private String takeFirstAvailable(java.util.Map<String, Integer> counts, String[] priority) {
+        if (counts == null) return null;
+        for (String t : priority) {
+            String got = takeIfAvailable(counts, t);
+            if (got != null) return got;
+        }
+        return null;
     }
 
     private int getCountIgnoreCase(Map<String, Integer> counts, String key) {
@@ -351,9 +394,6 @@ public class GameViewController {
     private int getHpForType(String type) {
         if (type == null) return 1;
         int hp = getCountIgnoreCase(GameSession.customMaxHealth, type);
-        if (hp <= 0) {
-            hp = getCountIgnoreCase(GameSession.customMaxHealth, type.toLowerCase());
-        }
         return hp > 0 ? hp : 1;
     }
 
@@ -365,36 +405,41 @@ public class GameViewController {
         int whiteBackRow = 0;
         int whitePawnRow = 1;
 
-        List<String> orderedWhitePieces = buildPieceOrder(GameSession.whitePieceCounts);
-
-        int majorCol = 0;
-        for (int i = 0; i < orderedWhitePieces.size() && majorCol < cols; i++) {
-            String type = orderedWhitePieces.get(i);
-            if (type == null) continue;
-
-            String imgKey = type + "_WHITE";
-            Image img = pieceImages.get(imgKey);
-            if (img == null) continue;
-
-            int hp = getHpForType(type);
-
-            GamePiece gp = new GamePiece();
-            gp.image = img;
-            gp.type = type;
-            gp.color = "WHITE";
-            gp.x = majorCol * CELL_SIZE;
-            gp.y = whiteBackRow * CELL_SIZE;
-            gp.currentHealth = hp;
-            gp.maxHealth = hp;
-            gp.stateId = 0;
-            pieces.add(gp);
-
-            majorCol++;
-        }
-
         {
-            int pawnCount = getCountIgnoreCase(GameSession.whitePieceCounts, "PAWN");
-            for (int c = 0; c < cols && c < pawnCount; c++) {
+            java.util.Map<String, Integer> counts = normalizedCounts(GameSession.whitePieceCounts);
+
+            // Rangée arrière: layout standard adapté, sans déborder
+            List<String> layout = buildBackRankLayout(cols);
+            String[] fallbackMajor = {"ROOK", "KNIGHT", "BISHOP", "QUEEN", "KING"};
+            for (int c = 0; c < cols && c < layout.size(); c++) {
+                String preferred = layout.get(c);
+                String type = takeIfAvailable(counts, preferred);
+                if (type == null) {
+                    type = takeFirstAvailable(counts, fallbackMajor);
+                }
+                if (type == null) break;
+
+                String imgKey = type + "_WHITE";
+                Image img = pieceImages.get(imgKey);
+                if (img == null) continue;
+
+                int hp = getHpForType(type);
+
+                GamePiece gp = new GamePiece();
+                gp.image = img;
+                gp.type = type;
+                gp.color = "WHITE";
+                gp.x = c * CELL_SIZE;
+                gp.y = whiteBackRow * CELL_SIZE;
+                gp.currentHealth = hp;
+                gp.maxHealth = hp;
+                gp.stateId = 0;
+                pieces.add(gp);
+            }
+
+            // Rangée devant: d'abord les pions, puis remplir avec les autres pièces restantes (ex: cavaliers)
+            int pawnCount = Math.min(cols, counts.getOrDefault("PAWN", 0));
+            for (int c = 0; c < pawnCount; c++) {
                 Image img = pieceImages.get("PAWN_WHITE");
                 if (img == null) continue;
 
@@ -411,42 +456,69 @@ public class GameViewController {
                 gp.stateId = 0;
                 pieces.add(gp);
             }
+            counts.put("PAWN", Math.max(0, counts.getOrDefault("PAWN", 0) - pawnCount));
+
+            String[] fallbackFront = {"KNIGHT", "BISHOP", "ROOK", "QUEEN", "KING"};
+            for (int c = pawnCount; c < cols; c++) {
+                String type = takeFirstAvailable(counts, fallbackFront);
+                if (type == null) break;
+
+                String imgKey = type + "_WHITE";
+                Image img = pieceImages.get(imgKey);
+                if (img == null) continue;
+
+                int hp = getHpForType(type);
+
+                GamePiece gp = new GamePiece();
+                gp.image = img;
+                gp.type = type;
+                gp.color = "WHITE";
+                gp.x = c * CELL_SIZE;
+                gp.y = whitePawnRow * CELL_SIZE;
+                gp.currentHealth = hp;
+                gp.maxHealth = hp;
+                gp.stateId = 0;
+                pieces.add(gp);
+            }
         }
 
         // Noirs en bas (rangée rows-1 pour majeures, rows-2 pour pions)
         int blackBackRow = rows - 1;
         int blackPawnRow = rows - 2;
 
-        List<String> orderedBlackPieces = buildPieceOrder(GameSession.blackPieceCounts);
-
-        majorCol = 0;
-        for (int i = 0; i < orderedBlackPieces.size() && majorCol < cols; i++) {
-            String type = orderedBlackPieces.get(i);
-            if (type == null) continue;
-
-            String imgKey = type + "_BLACK";
-            Image img = pieceImages.get(imgKey);
-            if (img == null) continue;
-
-            int hp = getHpForType(type);
-
-            GamePiece gp = new GamePiece();
-            gp.image = img;
-            gp.type = type;
-            gp.color = "BLACK";
-            gp.x = majorCol * CELL_SIZE;
-            gp.y = blackBackRow * CELL_SIZE;
-            gp.currentHealth = hp;
-            gp.maxHealth = hp;
-            gp.stateId = 0;
-            pieces.add(gp);
-
-            majorCol++;
-        }
-
         {
-            int pawnCount = getCountIgnoreCase(GameSession.blackPieceCounts, "PAWN");
-            for (int c = 0; c < cols && c < pawnCount; c++) {
+            java.util.Map<String, Integer> counts = normalizedCounts(GameSession.blackPieceCounts);
+
+            List<String> layout = buildBackRankLayout(cols);
+            String[] fallbackMajor = {"ROOK", "KNIGHT", "BISHOP", "QUEEN", "KING"};
+            for (int c = 0; c < cols && c < layout.size(); c++) {
+                String preferred = layout.get(c);
+                String type = takeIfAvailable(counts, preferred);
+                if (type == null) {
+                    type = takeFirstAvailable(counts, fallbackMajor);
+                }
+                if (type == null) break;
+
+                String imgKey = type + "_BLACK";
+                Image img = pieceImages.get(imgKey);
+                if (img == null) continue;
+
+                int hp = getHpForType(type);
+
+                GamePiece gp = new GamePiece();
+                gp.image = img;
+                gp.type = type;
+                gp.color = "BLACK";
+                gp.x = c * CELL_SIZE;
+                gp.y = blackBackRow * CELL_SIZE;
+                gp.currentHealth = hp;
+                gp.maxHealth = hp;
+                gp.stateId = 0;
+                pieces.add(gp);
+            }
+
+            int pawnCount = Math.min(cols, counts.getOrDefault("PAWN", 0));
+            for (int c = 0; c < pawnCount; c++) {
                 Image img = pieceImages.get("PAWN_BLACK");
                 if (img == null) continue;
 
@@ -455,6 +527,30 @@ public class GameViewController {
                 GamePiece gp = new GamePiece();
                 gp.image = img;
                 gp.type = "PAWN";
+                gp.color = "BLACK";
+                gp.x = c * CELL_SIZE;
+                gp.y = blackPawnRow * CELL_SIZE;
+                gp.currentHealth = hp;
+                gp.maxHealth = hp;
+                gp.stateId = 0;
+                pieces.add(gp);
+            }
+            counts.put("PAWN", Math.max(0, counts.getOrDefault("PAWN", 0) - pawnCount));
+
+            String[] fallbackFront = {"KNIGHT", "BISHOP", "ROOK", "QUEEN", "KING"};
+            for (int c = pawnCount; c < cols; c++) {
+                String type = takeFirstAvailable(counts, fallbackFront);
+                if (type == null) break;
+
+                String imgKey = type + "_BLACK";
+                Image img = pieceImages.get(imgKey);
+                if (img == null) continue;
+
+                int hp = getHpForType(type);
+
+                GamePiece gp = new GamePiece();
+                gp.image = img;
+                gp.type = type;
                 gp.color = "BLACK";
                 gp.x = c * CELL_SIZE;
                 gp.y = blackPawnRow * CELL_SIZE;
@@ -566,39 +662,72 @@ public class GameViewController {
             double dy = ballY - closestY;
 
             if (dx * dx + dy * dy <= BALL_RADIUS * BALL_RADIUS) {
-                // collision avec une pièce
-                int newHealth = gp.currentHealth - 1;
-                if (newHealth < 0) newHealth = 0;
+                // Déterminer si l'attaque est latérale (droite/gauche du centre de la pièce)
+                // ou frontale (haut/bas). On utilise le centre, pas la couleur.
+                double centerX = px + pw / 2.0;
+                double centerY = py + ph / 2.0;
+                double relX = ballX - centerX;
+                double relY = ballY - centerY;
+                boolean sideHit = Math.abs(relX) > Math.abs(relY);
 
-                boolean useBackend = GameSession.gameId != null && gp.stateId > 0;
-                System.out.println("[GameView] Collision balle/pièce id=" + gp.stateId + " type=" + gp.type + " color=" + gp.color + " nouvelle vie=" + newHealth + " backend=" + useBackend);
+                // 1 seul dégât par "attaque": cooldown par pièce
+                int pieceKey = (gp.stateId > 0) ? gp.stateId : System.identityHashCode(gp);
+                long now = System.nanoTime();
+                long lastHit = lastHitByPiece.getOrDefault(pieceKey, 0L);
+                boolean canDealDamage = (now - lastHit) >= PIECE_HIT_COOLDOWN_NANOS;
 
-                if (useBackend) {
-                    try {
-                        gameStateService.updatePieceHealth(gp.stateId, newHealth);
+                boolean didDamage = false;
+                if (!sideHit && canDealDamage) {
+                    int newHealth = gp.currentHealth - 1;
+                    if (newHealth < 0) newHealth = 0;
+
+                    boolean useBackend = GameSession.gameId != null && gp.stateId > 0;
+                    System.out.println("[GameView] Collision balle/pièce id=" + gp.stateId + " type=" + gp.type + " color=" + gp.color + " nouvelle vie=" + newHealth + " backend=" + useBackend);
+
+                    if (useBackend) {
+                        try {
+                            gameStateService.updatePieceHealth(gp.stateId, newHealth);
+                            gp.currentHealth = newHealth;
+                            if (gp.currentHealth <= 0) {
+                                gameStateService.capturePiece(gp.stateId);
+                                toRemove.add(gp);
+                                if ("KING".equalsIgnoreCase(gp.type)) {
+                                    statusLabel.setText("Roi " + gp.color + " capturé !");
+                                }
+                            }
+                        } catch (IOException | InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
                         gp.currentHealth = newHealth;
                         if (gp.currentHealth <= 0) {
-                            gameStateService.capturePiece(gp.stateId);
                             toRemove.add(gp);
                             if ("KING".equalsIgnoreCase(gp.type)) {
                                 statusLabel.setText("Roi " + gp.color + " capturé !");
                             }
                         }
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
                     }
-                } else {
-                    gp.currentHealth = newHealth;
-                    if (gp.currentHealth <= 0) {
-                        toRemove.add(gp);
-                        if ("KING".equalsIgnoreCase(gp.type)) {
-                            statusLabel.setText("Roi " + gp.color + " capturé !");
-                        }
-                    }
+
+                    lastHitByPiece.put(pieceKey, now);
+                    didDamage = true;
                 }
 
-                // inverser la direction verticale de la balle
-                ballVY = -ballVY;
+                // Rebond (sans sortir du plateau). Sur impact latéral, inverser VX; sinon inverser VY.
+                if (sideHit) {
+                    if (dx > 0) {
+                        ballX = closestX + BALL_RADIUS;
+                    } else {
+                        ballX = closestX - BALL_RADIUS;
+                    }
+                    ballVX = -ballVX;
+                } else {
+                    if (dy > 0) {
+                        ballY = closestY + BALL_RADIUS;
+                    } else {
+                        ballY = closestY - BALL_RADIUS;
+                    }
+                    ballVY = -ballVY;
+                }
             }
         }
         pieces.removeAll(toRemove);
