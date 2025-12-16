@@ -3,6 +3,7 @@ com\chessping\client\service\PieceTypeService.class
 com\chessping\client\chess\model\PieceTypeDTO.class
 com\chessping\client\ui\MainMenuController.class
 com\chessping\client\ui\GameViewController$GamePiece.class
+com\chessping\client\ui\GameViewController$GamePhase.class
 com\chessping\client\ui\GameViewController.class
 com\chessping\client\service\PlayerService$1.class
 com\chessping\client\session\GameSession.class

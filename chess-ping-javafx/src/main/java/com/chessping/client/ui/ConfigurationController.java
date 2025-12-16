@@ -11,12 +11,17 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.Stage;
+import javafx.util.converter.IntegerStringConverter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 public class ConfigurationController {
@@ -49,7 +54,15 @@ public class ConfigurationController {
     private TableColumn<PieceTypeDTO, Integer> blackLifeColumn;
 
     @FXML
+    private RadioButton whiteStartsRadio;
+
+    @FXML
+    private RadioButton blackStartsRadio;
+
+    @FXML
     private Label warningLabel;
+
+    private boolean manualCountsOverride = false;
 
     private final PieceTypeService pieceTypeService =
             new PieceTypeService("http://localhost:8080/chess-ping-ejb/api");
@@ -60,13 +73,67 @@ public class ConfigurationController {
         colsCombo.setItems(FXCollections.observableArrayList(2, 4, 6, 8));
         colsCombo.getSelectionModel().select(Integer.valueOf(8));
 
-        // Configuration des colonnes : on affiche nom, nombre (calculé) et vie max
+        ToggleGroup serveGroup = new ToggleGroup();
+        whiteStartsRadio.setToggleGroup(serveGroup);
+        blackStartsRadio.setToggleGroup(serveGroup);
+        if ("BLACK".equalsIgnoreCase(GameSession.firstServer)) {
+            blackStartsRadio.setSelected(true);
+        } else {
+            whiteStartsRadio.setSelected(true);
+        }
+
+        // Configuration des colonnes : on affiche nom, nombre (modifiable) et vie max (modifiable)
         whiteTypeColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
         whiteCountColumn.setCellValueFactory(new PropertyValueFactory<>("count"));
         whiteLifeColumn.setCellValueFactory(new PropertyValueFactory<>("maxHealth"));
         blackTypeColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
         blackCountColumn.setCellValueFactory(new PropertyValueFactory<>("count"));
         blackLifeColumn.setCellValueFactory(new PropertyValueFactory<>("maxHealth"));
+
+        whiteTable.setEditable(true);
+        blackTable.setEditable(true);
+        whiteCountColumn.setEditable(true);
+        whiteLifeColumn.setEditable(true);
+        blackCountColumn.setEditable(true);
+        blackLifeColumn.setEditable(true);
+
+        whiteCountColumn.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
+        whiteCountColumn.setOnEditCommit(evt -> {
+            PieceTypeDTO dto = evt.getRowValue();
+            if (dto == null) return;
+            Integer v = evt.getNewValue();
+            dto.setCount(v != null && v >= 0 ? v : 0);
+            manualCountsOverride = true;
+            whiteTable.refresh();
+        });
+
+        blackCountColumn.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
+        blackCountColumn.setOnEditCommit(evt -> {
+            PieceTypeDTO dto = evt.getRowValue();
+            if (dto == null) return;
+            Integer v = evt.getNewValue();
+            dto.setCount(v != null && v >= 0 ? v : 0);
+            manualCountsOverride = true;
+            blackTable.refresh();
+        });
+
+        whiteLifeColumn.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
+        whiteLifeColumn.setOnEditCommit(evt -> {
+            PieceTypeDTO dto = evt.getRowValue();
+            if (dto == null) return;
+            Integer v = evt.getNewValue();
+            dto.setMaxHealth(v != null && v > 0 ? v : 1);
+            whiteTable.refresh();
+        });
+
+        blackLifeColumn.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
+        blackLifeColumn.setOnEditCommit(evt -> {
+            PieceTypeDTO dto = evt.getRowValue();
+            if (dto == null) return;
+            Integer v = evt.getNewValue();
+            dto.setMaxHealth(v != null && v > 0 ? v : 1);
+            blackTable.refresh();
+        });
 
         try {
             List<PieceTypeDTO> pieces = pieceTypeService.findAll();
@@ -85,18 +152,21 @@ public class ConfigurationController {
         // Recalcule les nombres si l'utilisateur change le nombre de colonnes
         colsCombo.getSelectionModel().selectedItemProperty().addListener((obsSel, oldVal, newVal) -> {
             if (newVal != null && whiteTable.getItems() != null) {
-                updateCountsForCols(newVal, whiteTable.getItems());
-                // reflète aussi sur la table noire
-                if (blackTable.getItems() != null) {
-                    updateCountsForCols(newVal, blackTable.getItems());
+                if (!manualCountsOverride) {
+                    updateCountsForCols(newVal, whiteTable.getItems());
+                    // reflète aussi sur la table noire
+                    if (blackTable.getItems() != null) {
+                        updateCountsForCols(newVal, blackTable.getItems());
+                    }
                 }
             }
         });
     }
 
     private void updateCountsForCols(int cols, List<PieceTypeDTO> pieces) {
-        // Limite totale de pièces par couleur = nombre de colonnes
-        int limit = cols;
+        // Limite totale de pièces par couleur = 2 lignes * nombre de colonnes
+        // (une ligne arrière + une ligne de pions)
+        int limit = cols * 2;
 
         // Comptes standard d'un jeu d'échecs par couleur
         var standardCounts = java.util.Map.of(
@@ -108,20 +178,62 @@ public class ConfigurationController {
                 "king", 1
         );
 
-        String[] priorityOrder = {"rook", "queen", "king", "bishop", "knight", "pawn"};
-
         java.util.Map<String, Integer> baseCounts = new java.util.HashMap<>();
         for (String k : standardCounts.keySet()) {
             baseCounts.put(k, 0);
         }
 
-        int remaining = limit;
-        for (String kind : priorityOrder) {
-            if (remaining <= 0) break;
-            int std = standardCounts.getOrDefault(kind, 0);
-            int take = Math.min(std, remaining);
-            baseCounts.put(kind, take);
-            remaining -= take;
+        // Répartition par défaut:
+        // - 1ère ligne (arrière) = exactement `cols` cases
+        // - 2e ligne = le reste jusqu'à `cols * 2`
+        // Ordre de remplissage:
+        // - Ligne arrière: Roi, Reine, Tours, Cavaliers, Fous
+        // - 2e ligne: Cavaliers restants, puis Pions
+
+        int remainingBackRank = cols;
+        if (remainingBackRank > 0) {
+            baseCounts.put("king", 1);
+            remainingBackRank -= 1;
+        }
+        if (remainingBackRank > 0) {
+            baseCounts.put("queen", 1);
+            remainingBackRank -= 1;
+        }
+
+        if (remainingBackRank > 0) {
+            int take = Math.min(standardCounts.getOrDefault("rook", 0), remainingBackRank);
+            baseCounts.put("rook", take);
+            remainingBackRank -= take;
+        }
+        if (remainingBackRank > 0) {
+            int take = Math.min(standardCounts.getOrDefault("knight", 0), remainingBackRank);
+            baseCounts.put("knight", take);
+            remainingBackRank -= take;
+        }
+        if (remainingBackRank > 0) {
+            int take = Math.min(standardCounts.getOrDefault("bishop", 0), remainingBackRank);
+            baseCounts.put("bishop", take);
+            remainingBackRank -= take;
+        }
+
+        int remainingTotal = limit;
+        for (Integer v : baseCounts.values()) {
+            remainingTotal -= (v != null ? v : 0);
+        }
+
+        if (remainingTotal > 0) {
+            int currentKnights = baseCounts.getOrDefault("knight", 0);
+            int addKnights = Math.min(standardCounts.getOrDefault("knight", 0) - currentKnights, remainingTotal);
+            if (addKnights > 0) {
+                baseCounts.put("knight", currentKnights + addKnights);
+                remainingTotal -= addKnights;
+            }
+        }
+
+        if (remainingTotal > 0) {
+            int addPawns = Math.min(standardCounts.getOrDefault("pawn", 0), remainingTotal);
+            baseCounts.put("pawn", addPawns);
+            remainingTotal -= addPawns;
         }
 
         // Appliquer ces comptes aux PieceTypeDTO selon leur name (en minuscule)
@@ -147,6 +259,38 @@ public class ConfigurationController {
         if (cols == null) cols = 8;
 
         GameSession.setBoardCols(cols);
+
+        if (blackStartsRadio != null && blackStartsRadio.isSelected()) {
+            GameSession.firstServer = "BLACK";
+        } else {
+            GameSession.firstServer = "WHITE";
+        }
+
+        GameSession.whitePieceCounts = new HashMap<>();
+        GameSession.blackPieceCounts = new HashMap<>();
+        GameSession.customMaxHealth = new HashMap<>();
+
+        if (whiteTable.getItems() != null) {
+            for (PieceTypeDTO dto : whiteTable.getItems()) {
+                if (dto == null || dto.getName() == null) continue;
+                String key = dto.getName().toLowerCase();
+                int count = dto.getCount() != null && dto.getCount() >= 0 ? dto.getCount() : 0;
+                int hp = dto.getMaxHealth() != null && dto.getMaxHealth() > 0 ? dto.getMaxHealth() : 1;
+                GameSession.whitePieceCounts.put(key, count);
+                GameSession.customMaxHealth.put(key, hp);
+            }
+        }
+
+        if (blackTable.getItems() != null) {
+            for (PieceTypeDTO dto : blackTable.getItems()) {
+                if (dto == null || dto.getName() == null) continue;
+                String key = dto.getName().toLowerCase();
+                int count = dto.getCount() != null && dto.getCount() >= 0 ? dto.getCount() : 0;
+                int hp = dto.getMaxHealth() != null && dto.getMaxHealth() > 0 ? dto.getMaxHealth() : 1;
+                GameSession.blackPieceCounts.put(key, count);
+                GameSession.customMaxHealth.put(key, hp);
+            }
+        }
 
         // Petit résumé textuel de la config auto (comme feedback visuel)
         StringBuilder sb = new StringBuilder();

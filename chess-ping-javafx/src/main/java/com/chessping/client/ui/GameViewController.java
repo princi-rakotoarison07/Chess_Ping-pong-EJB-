@@ -1,16 +1,23 @@
 package com.chessping.client.ui;
 
+import com.chessping.client.MainApp;
 import com.chessping.client.model.GamePieceStateDTO;
 import com.chessping.client.service.GameStateService;
 import com.chessping.client.session.GameSession;
 import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.control.Label;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +37,12 @@ public class GameViewController {
     private Label scoreLabel;
 
     @FXML
+    private Button resetGameButton;
+
+    @FXML
+    private Button resetConfigButton;
+
+    @FXML
     private Label statusLabel;
 
     private final GameStateService gameStateService =
@@ -45,7 +58,7 @@ public class GameViewController {
         int maxHealth;
         String type; // KING, QUEEN...
         String color; // WHITE, BLACK
-        int stateId;
+        int stateId; // >0 si la pièce vient du backend
     }
 
     private final List<GamePiece> pieces = new ArrayList<>();
@@ -65,7 +78,19 @@ public class GameViewController {
     private double ballVX;
     private double ballVY;
     private static final double BALL_RADIUS = 10;
+    private static final double BALL_SPEED = 220;
     private Color ballColor = Color.WHITE;
+
+    private enum GamePhase {
+        WAITING_SERVE,
+        PLAYING,
+        PAUSED,
+        GAME_OVER
+    }
+
+    private GamePhase gamePhase = GamePhase.WAITING_SERVE;
+    private double aimAngle = 0.0;
+    private String currentServer = "WHITE";
 
     private AnimationTimer timer;
 
@@ -92,6 +117,10 @@ public class GameViewController {
         initPiecesLocally(cols, rows);
         initPaddlesAndBall(width, height);
 
+        currentServer = ("BLACK".equalsIgnoreCase(GameSession.firstServer)) ? "BLACK" : "WHITE";
+        gamePhase = GamePhase.WAITING_SERVE;
+        attachBallToPaddle(currentServer);
+
         GraphicsContext gc = gameCanvas.getGraphicsContext2D();
 
         timer = new AnimationTimer() {
@@ -106,12 +135,6 @@ public class GameViewController {
                 double deltaSeconds = (now - lastTime) / 1_000_000_000.0;
                 lastTime = now;
 
-                // Gestion de la pause après un point
-                if (now < resumeTimeNanos) {
-                    render(gc, width, height);
-                    return;
-                }
-
                 update(deltaSeconds, width, height);
                 render(gc, width, height);
             }
@@ -121,6 +144,10 @@ public class GameViewController {
         gameCanvas.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 newScene.setOnKeyPressed(e -> {
+                    if (e.getCode() == KeyCode.SPACE) {
+                        tryStartServe();
+                        return;
+                    }
                     if (e.getCode() == KeyCode.Q) {
                         paddleRedX -= PADDLE_SPEED;
                     } else if (e.getCode() == KeyCode.D) {
@@ -134,7 +161,46 @@ public class GameViewController {
             }
         });
 
+        gameCanvas.setOnMouseMoved(e -> {
+            if (gamePhase == GamePhase.WAITING_SERVE) {
+                aimAngle = Math.atan2(e.getY() - ballY, e.getX() - ballX);
+            }
+        });
+
+        gameCanvas.setOnMouseClicked(e -> tryStartServe());
+
         timer.start();
+    }
+
+    private void tryStartServe() {
+        if (gamePhase != GamePhase.WAITING_SERVE) {
+            return;
+        }
+        double speed = BALL_SPEED * GameSession.speedMultiplier;
+        ballVX = Math.cos(aimAngle) * speed;
+        ballVY = Math.sin(aimAngle) * speed;
+        gamePhase = GamePhase.PLAYING;
+    }
+
+    private void attachBallToPaddle(String player) {
+        if ("BLACK".equalsIgnoreCase(player)) {
+            ballX = paddleBlueX + PADDLE_WIDTH / 2.0;
+            ballY = paddleBlueY;
+            ballColor = Color.BLUE;
+        } else {
+            ballX = paddleRedX + PADDLE_WIDTH / 2.0;
+            ballY = paddleRedY + PADDLE_HEIGHT;
+            ballColor = Color.RED;
+        }
+
+        ballVX = 0;
+        ballVY = 0;
+    }
+
+    private void resetBallAfterPoint(String nextServer) {
+        currentServer = ("BLACK".equalsIgnoreCase(nextServer)) ? "BLACK" : "WHITE";
+        gamePhase = GamePhase.WAITING_SERVE;
+        attachBallToPaddle(currentServer);
     }
 
     private void loadImages() {
@@ -250,105 +316,153 @@ public class GameViewController {
         }
     }
 
+    private List<String> buildPieceOrder(Map<String, Integer> pieceCounts) {
+        // Ordre strict (sans symétrie, sans trous):
+        // KING -> QUEEN -> ROOK -> KNIGHT -> BISHOP
+        // Chaque type est répété exactement selon sa quantité configurée.
+        List<String> ordered = new ArrayList<>();
+
+        int king = getCountIgnoreCase(pieceCounts, "KING");
+        int queen = getCountIgnoreCase(pieceCounts, "QUEEN");
+        int rook = getCountIgnoreCase(pieceCounts, "ROOK");
+        int knight = getCountIgnoreCase(pieceCounts, "KNIGHT");
+        int bishop = getCountIgnoreCase(pieceCounts, "BISHOP");
+
+        for (int i = 0; i < king; i++) ordered.add("KING");
+        for (int i = 0; i < queen; i++) ordered.add("QUEEN");
+        for (int i = 0; i < rook; i++) ordered.add("ROOK");
+        for (int i = 0; i < knight; i++) ordered.add("KNIGHT");
+        for (int i = 0; i < bishop; i++) ordered.add("BISHOP");
+
+        return ordered;
+    }
+
+    private int getCountIgnoreCase(Map<String, Integer> counts, String key) {
+        if (counts == null || key == null) return 0;
+        Integer v = counts.get(key);
+        if (v != null) return Math.max(0, v);
+        v = counts.get(key.toLowerCase());
+        if (v != null) return Math.max(0, v);
+        v = counts.get(key.toUpperCase());
+        if (v != null) return Math.max(0, v);
+        return 0;
+    }
+
+    private int getHpForType(String type) {
+        if (type == null) return 1;
+        int hp = getCountIgnoreCase(GameSession.customMaxHealth, type);
+        if (hp <= 0) {
+            hp = getCountIgnoreCase(GameSession.customMaxHealth, type.toLowerCase());
+        }
+        return hp > 0 ? hp : 1;
+    }
+
     private void initPiecesLocally(int cols, int rows) {
         System.out.println("[GameView] initPiecesLocally cols=" + cols + " rows=" + rows);
         pieces.clear();
-
-        // ordre des pièces sur la rangée du fond
-        String[] order = {"ROOK", "KNIGHT", "BISHOP", "QUEEN", "KING", "BISHOP", "KNIGHT", "ROOK"};
-
-        // valeurs de vie fixes par type (exemple)
-        int hpKing = 4;
-        int hpQueen = 3;
-        int hpRook = 3;
-        int hpBishop = 2;
-        int hpKnight = 2;
-        int hpPawn = 1;
 
         // Blancs en haut (rangée 0 pour majeures, 1 pour pions)
         int whiteBackRow = 0;
         int whitePawnRow = 1;
 
-        for (int c = 0; c < cols && c < order.length; c++) {
-            String type = order[c];
-            String key = type + "_WHITE";
-            Image img = pieceImages.get(key);
+        List<String> orderedWhitePieces = buildPieceOrder(GameSession.whitePieceCounts);
+
+        int majorCol = 0;
+        for (int i = 0; i < orderedWhitePieces.size() && majorCol < cols; i++) {
+            String type = orderedWhitePieces.get(i);
+            if (type == null) continue;
+
+            String imgKey = type + "_WHITE";
+            Image img = pieceImages.get(imgKey);
             if (img == null) continue;
+
+            int hp = getHpForType(type);
 
             GamePiece gp = new GamePiece();
             gp.image = img;
             gp.type = type;
             gp.color = "WHITE";
-            gp.x = c * CELL_SIZE;
+            gp.x = majorCol * CELL_SIZE;
             gp.y = whiteBackRow * CELL_SIZE;
-
-            if ("KING".equals(type)) gp.currentHealth = hpKing;
-            else if ("QUEEN".equals(type)) gp.currentHealth = hpQueen;
-            else if ("ROOK".equals(type)) gp.currentHealth = hpRook;
-            else if ("BISHOP".equals(type)) gp.currentHealth = hpBishop;
-            else if ("KNIGHT".equals(type)) gp.currentHealth = hpKnight;
-            gp.maxHealth = gp.currentHealth;
-
+            gp.currentHealth = hp;
+            gp.maxHealth = hp;
+            gp.stateId = 0;
             pieces.add(gp);
+
+            majorCol++;
         }
 
-        for (int c = 0; c < cols; c++) {
-            Image img = pieceImages.get("PAWN_WHITE");
-            if (img == null) continue;
+        {
+            int pawnCount = getCountIgnoreCase(GameSession.whitePieceCounts, "PAWN");
+            for (int c = 0; c < cols && c < pawnCount; c++) {
+                Image img = pieceImages.get("PAWN_WHITE");
+                if (img == null) continue;
 
-            GamePiece gp = new GamePiece();
-            gp.image = img;
-            gp.type = "PAWN";
-            gp.color = "WHITE";
-            gp.x = c * CELL_SIZE;
-            gp.y = whitePawnRow * CELL_SIZE;
-            gp.currentHealth = hpPawn;
-            gp.maxHealth = hpPawn;
+                int hp = getHpForType("PAWN");
 
-            pieces.add(gp);
+                GamePiece gp = new GamePiece();
+                gp.image = img;
+                gp.type = "PAWN";
+                gp.color = "WHITE";
+                gp.x = c * CELL_SIZE;
+                gp.y = whitePawnRow * CELL_SIZE;
+                gp.currentHealth = hp;
+                gp.maxHealth = hp;
+                gp.stateId = 0;
+                pieces.add(gp);
+            }
         }
 
         // Noirs en bas (rangée rows-1 pour majeures, rows-2 pour pions)
         int blackBackRow = rows - 1;
         int blackPawnRow = rows - 2;
 
-        for (int c = 0; c < cols && c < order.length; c++) {
-            String type = order[c];
-            String key = type + "_BLACK";
-            Image img = pieceImages.get(key);
+        List<String> orderedBlackPieces = buildPieceOrder(GameSession.blackPieceCounts);
+
+        majorCol = 0;
+        for (int i = 0; i < orderedBlackPieces.size() && majorCol < cols; i++) {
+            String type = orderedBlackPieces.get(i);
+            if (type == null) continue;
+
+            String imgKey = type + "_BLACK";
+            Image img = pieceImages.get(imgKey);
             if (img == null) continue;
+
+            int hp = getHpForType(type);
 
             GamePiece gp = new GamePiece();
             gp.image = img;
             gp.type = type;
             gp.color = "BLACK";
-            gp.x = c * CELL_SIZE;
+            gp.x = majorCol * CELL_SIZE;
             gp.y = blackBackRow * CELL_SIZE;
-
-            if ("KING".equals(type)) gp.currentHealth = hpKing;
-            else if ("QUEEN".equals(type)) gp.currentHealth = hpQueen;
-            else if ("ROOK".equals(type)) gp.currentHealth = hpRook;
-            else if ("BISHOP".equals(type)) gp.currentHealth = hpBishop;
-            else if ("KNIGHT".equals(type)) gp.currentHealth = hpKnight;
-            gp.maxHealth = gp.currentHealth;
-
+            gp.currentHealth = hp;
+            gp.maxHealth = hp;
+            gp.stateId = 0;
             pieces.add(gp);
+
+            majorCol++;
         }
 
-        for (int c = 0; c < cols; c++) {
-            Image img = pieceImages.get("PAWN_BLACK");
-            if (img == null) continue;
+        {
+            int pawnCount = getCountIgnoreCase(GameSession.blackPieceCounts, "PAWN");
+            for (int c = 0; c < cols && c < pawnCount; c++) {
+                Image img = pieceImages.get("PAWN_BLACK");
+                if (img == null) continue;
 
-            GamePiece gp = new GamePiece();
-            gp.image = img;
-            gp.type = "PAWN";
-            gp.color = "BLACK";
-            gp.x = c * CELL_SIZE;
-            gp.y = blackPawnRow * CELL_SIZE;
-            gp.currentHealth = hpPawn;
-            gp.maxHealth = hpPawn;
+                int hp = getHpForType("PAWN");
 
-            pieces.add(gp);
+                GamePiece gp = new GamePiece();
+                gp.image = img;
+                gp.type = "PAWN";
+                gp.color = "BLACK";
+                gp.x = c * CELL_SIZE;
+                gp.y = blackPawnRow * CELL_SIZE;
+                gp.currentHealth = hp;
+                gp.maxHealth = hp;
+                gp.stateId = 0;
+                pieces.add(gp);
+            }
         }
 
         System.out.println("[GameView] initPiecesLocally: " + pieces.size() + " pièces créées.");
@@ -379,17 +493,34 @@ public class GameViewController {
         paddleRedX = clamp(paddleRedX, 0, canvasWidth - PADDLE_WIDTH);
         paddleBlueX = clamp(paddleBlueX, 0, canvasWidth - PADDLE_WIDTH);
 
+        if (gamePhase == GamePhase.WAITING_SERVE) {
+            attachBallToPaddle(currentServer);
+            return;
+        }
+
+        if (gamePhase != GamePhase.PLAYING) {
+            return;
+        }
+
         // Déplacement de la balle
         ballX += ballVX * deltaSeconds;
         ballY += ballVY * deltaSeconds;
 
-        // Collision avec les bordures gauche/droite
+        // Collision avec les bordures du canvas (la balle ne doit jamais sortir du cadre)
         if (ballX - BALL_RADIUS < 0) {
             ballX = BALL_RADIUS;
             ballVX = Math.abs(ballVX);
         } else if (ballX + BALL_RADIUS > canvasWidth) {
             ballX = canvasWidth - BALL_RADIUS;
             ballVX = -Math.abs(ballVX);
+        }
+
+        if (ballY - BALL_RADIUS < 0) {
+            ballY = BALL_RADIUS;
+            ballVY = Math.abs(ballVY);
+        } else if (ballY + BALL_RADIUS > canvasHeight) {
+            ballY = canvasHeight - BALL_RADIUS;
+            ballVY = -Math.abs(ballVY);
         }
 
         // Collision avec paddle rouge (dans l'espace entre rangées 1 et 2)
@@ -420,22 +551,6 @@ public class GameViewController {
             }
         }
 
-        // Gestion des points si la balle sort du plateau en haut/bas
-        if (ballY + BALL_RADIUS < 0) {
-            // le joueur bleu marque un point
-            scoreBlue++;
-            updateScoreLabel();
-            resetBall(canvasWidth, canvasHeight, 1);
-            return;
-        }
-        if (ballY - BALL_RADIUS > canvasHeight) {
-            // le joueur rouge marque un point
-            scoreRed++;
-            updateScoreLabel();
-            resetBall(canvasWidth, canvasHeight, -1);
-            return;
-        }
-
         // Collision balle / pièces (cercle-rectangle)
         List<GamePiece> toRemove = new ArrayList<>();
         for (GamePiece gp : pieces) {
@@ -452,22 +567,34 @@ public class GameViewController {
 
             if (dx * dx + dy * dy <= BALL_RADIUS * BALL_RADIUS) {
                 // collision avec une pièce
-                try {
-                    int newHealth = gp.currentHealth - 1;
-                    if (newHealth < 0) newHealth = 0;
-                    System.out.println("[GameView] Collision balle/pièce id=" + gp.stateId + " type=" + gp.type + " color=" + gp.color + " nouvelle vie=" + newHealth);
-                    gameStateService.updatePieceHealth(gp.stateId, newHealth);
+                int newHealth = gp.currentHealth - 1;
+                if (newHealth < 0) newHealth = 0;
+
+                boolean useBackend = GameSession.gameId != null && gp.stateId > 0;
+                System.out.println("[GameView] Collision balle/pièce id=" + gp.stateId + " type=" + gp.type + " color=" + gp.color + " nouvelle vie=" + newHealth + " backend=" + useBackend);
+
+                if (useBackend) {
+                    try {
+                        gameStateService.updatePieceHealth(gp.stateId, newHealth);
+                        gp.currentHealth = newHealth;
+                        if (gp.currentHealth <= 0) {
+                            gameStateService.capturePiece(gp.stateId);
+                            toRemove.add(gp);
+                            if ("KING".equalsIgnoreCase(gp.type)) {
+                                statusLabel.setText("Roi " + gp.color + " capturé !");
+                            }
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else {
                     gp.currentHealth = newHealth;
                     if (gp.currentHealth <= 0) {
-                        gameStateService.capturePiece(gp.stateId);
                         toRemove.add(gp);
-                        // Détection victoire simple si roi détruit
                         if ("KING".equalsIgnoreCase(gp.type)) {
                             statusLabel.setText("Roi " + gp.color + " capturé !");
                         }
                     }
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
                 }
 
                 // inverser la direction verticale de la balle
@@ -498,18 +625,11 @@ public class GameViewController {
                 gc.drawImage(gp.image, gp.x, gp.y, size, size);
             }
 
-            // barre de vie au-dessus
-            if (gp.maxHealth > 0 && gp.currentHealth > 0) {
-                double ratio = (double) gp.currentHealth / gp.maxHealth;
-                double barWidth = 60 * ratio;
-                double barX = gp.x;
-                double barY = gp.y - 10;
-                gc.setFill(Color.RED);
-                gc.fillRect(barX, barY, 60, 6);
-                gc.setFill(Color.LIMEGREEN);
-                gc.fillRect(barX, barY, barWidth, 6);
-                gc.setStroke(Color.BLACK);
-                gc.strokeRect(barX, barY, 60, 6);
+            // Affichage du nombre de vies sur la pièce (au lieu d'une barre verte)
+            if (gp.currentHealth > 0) {
+                gc.setFont(Font.font(16));
+                gc.setFill(Color.BLACK);
+                gc.fillText(String.valueOf(gp.currentHealth), gp.x + 6, gp.y + 18);
             }
         }
 
@@ -527,6 +647,31 @@ public class GameViewController {
         gc.setStroke(Color.BLACK);
         gc.strokeOval(ballX - BALL_RADIUS, ballY - BALL_RADIUS,
                 BALL_RADIUS * 2, BALL_RADIUS * 2);
+
+        if (gamePhase == GamePhase.WAITING_SERVE) {
+            drawArrow(gc);
+        }
+    }
+
+    private void drawArrow(GraphicsContext gc) {
+        double startX = ballX;
+        double startY = ballY;
+        double endX = ballX + Math.cos(aimAngle) * 40;
+        double endY = ballY + Math.sin(aimAngle) * 40;
+
+        gc.setStroke(Color.BLACK);
+        gc.strokeLine(startX, startY, endX, endY);
+
+        double headSize = 8;
+        double angle1 = aimAngle + Math.PI * 0.85;
+        double angle2 = aimAngle - Math.PI * 0.85;
+        double hx1 = endX + Math.cos(angle1) * headSize;
+        double hy1 = endY + Math.sin(angle1) * headSize;
+        double hx2 = endX + Math.cos(angle2) * headSize;
+        double hy2 = endY + Math.sin(angle2) * headSize;
+
+        gc.strokeLine(endX, endY, hx1, hy1);
+        gc.strokeLine(endX, endY, hx2, hy2);
     }
 
     private void resetBall(double canvasWidth, double canvasHeight, int verticalDirection) {
@@ -549,6 +694,49 @@ public class GameViewController {
 
     private void updateScoreLabel() {
         scoreLabel.setText("Score: " + scoreRed + " - " + scoreBlue);
+    }
+
+    @FXML
+    private void onResetGame() {
+        int cols = GameSession.boardCols > 0 ? GameSession.boardCols : BOARD_COLS;
+        int rows = GameSession.BOARD_ROWS;
+
+        double width = cols * CELL_SIZE;
+        double height = rows * CELL_SIZE;
+
+        scoreRed = 0;
+        scoreBlue = 0;
+        updateScoreLabel();
+        statusLabel.setText("Jeu en cours");
+
+        initPiecesLocally(cols, rows);
+        initPaddlesAndBall(width, height);
+
+        currentServer = ("BLACK".equalsIgnoreCase(GameSession.firstServer)) ? "BLACK" : "WHITE";
+        gamePhase = GamePhase.WAITING_SERVE;
+        attachBallToPaddle(currentServer);
+    }
+
+    @FXML
+    private void onResetConfiguration() {
+        if (timer != null) {
+            timer.stop();
+        }
+
+        GameSession.reset();
+
+        try {
+            FXMLLoader loader = new FXMLLoader(MainApp.class.getResource("/fxml/Configuration.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root, 900, 600);
+            scene.getStylesheets().add(MainApp.class.getResource("/css/styles.css").toExternalForm());
+
+            Stage stage = (Stage) scoreLabel.getScene().getWindow();
+            stage.setScene(scene);
+        } catch (Exception e) {
+            statusLabel.setText("Erreur retour configuration: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private double clamp(double v, double min, double max) {

@@ -51,6 +51,13 @@
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <padding><Insets top="10" bottom="10" left="10" right="10"/></padding>
             <children>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Service:" style="-fx-text-fill: white;"/>
+                        <RadioButton fx:id="whiteStartsRadio" text="Blancs commencent" style="-fx-text-fill: white;"/>
+                        <RadioButton fx:id="blackStartsRadio" text="Noirs commencent" style="-fx-text-fill: white;"/>
+                    </children>
+                </HBox>
                 <Label fx:id="warningLabel" textFill="red"/>
                 <Button text="Lancer la partie" onAction="#onStartGame"/>
             </children>
