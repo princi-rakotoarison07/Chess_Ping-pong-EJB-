@@ -39,6 +39,15 @@ public class GameViewController {
     private Label scoreLabel;
 
     @FXML
+    private Label speedLabel;
+
+    @FXML
+    private Button speedMinusButton;
+
+    @FXML
+    private Button speedPlusButton;
+
+    @FXML
     private Button resetGameButton;
 
     @FXML
@@ -96,6 +105,10 @@ public class GameViewController {
 
     private AnimationTimer timer;
 
+    private static final double SPEED_STEP = 0.1;
+    private static final double SPEED_MIN = 0.2;
+    private static final double SPEED_MAX = 3.0;
+
     // scoring et remise en jeu
     private int scoreRed = 0;
     private int scoreBlue = 0;
@@ -117,6 +130,7 @@ public class GameViewController {
 
         scoreLabel.setText("Score: 0 - 0");
         statusLabel.setText("Jeu en cours");
+        updateSpeedLabel();
 
         loadImages();
         initPiecesLocally(cols, rows);
@@ -184,6 +198,37 @@ public class GameViewController {
         Platform.runLater(() -> gameCanvas.requestFocus());
 
         timer.start();
+    }
+
+    private void updateSpeedLabel() {
+        if (speedLabel == null) return;
+        speedLabel.setText(String.format("x%.1f", GameSession.speedMultiplier));
+    }
+
+    private void applySpeedMultiplier(double newMultiplier) {
+        double clamped = Math.max(SPEED_MIN, Math.min(SPEED_MAX, newMultiplier));
+        double old = GameSession.speedMultiplier;
+        if (old <= 0) old = 1.0;
+
+        // Rescaler la vitesse instantanée si la balle est en mouvement
+        if (ballVX != 0 || ballVY != 0) {
+            double factor = clamped / old;
+            ballVX *= factor;
+            ballVY *= factor;
+        }
+
+        GameSession.speedMultiplier = clamped;
+        updateSpeedLabel();
+    }
+
+    @FXML
+    private void onSpeedMinus() {
+        applySpeedMultiplier(GameSession.speedMultiplier - SPEED_STEP);
+    }
+
+    @FXML
+    private void onSpeedPlus() {
+        applySpeedMultiplier(GameSession.speedMultiplier + SPEED_STEP);
     }
 
     private void tryStartServe() {
@@ -690,7 +735,7 @@ public class GameViewController {
                 boolean canDealDamage = (now - lastHit) >= PIECE_HIT_COOLDOWN_NANOS;
 
                 boolean didDamage = false;
-                if (!sideHit && canDealDamage) {
+                if (canDealDamage) {
                     int newHealth = gp.currentHealth - 1;
                     if (newHealth < 0) newHealth = 0;
 
@@ -745,6 +790,9 @@ public class GameViewController {
                     }
                     ballVY = -ballVY;
                 }
+
+                // Une seule collision gérée par frame: évite les doubles rebonds/dégâts si la balle chevauche plusieurs pièces
+                break;
             }
         }
         pieces.removeAll(toRemove);

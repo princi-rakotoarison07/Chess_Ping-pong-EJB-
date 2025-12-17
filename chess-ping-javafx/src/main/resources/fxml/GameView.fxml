@@ -10,6 +10,16 @@
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="game-header">
             <children>
                 <Label fx:id="scoreLabel" text="Score" style="-fx-text-fill: white;"/>
+                <HBox spacing="4" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Vitesse:" style="-fx-text-fill: white;"/>
+                        <Button fx:id="speedMinusButton" text="-" onAction="#onSpeedMinus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                        <Label fx:id="speedLabel" text="x1.0" style="-fx-text-fill: white;"/>
+                        <Button fx:id="speedPlusButton" text="+" onAction="#onSpeedPlus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                    </children>
+                </HBox>
                 <Button fx:id="resetGameButton" text="Reset" onAction="#onResetGame"
                         style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
                 <Button fx:id="resetConfigButton" text="Config" onAction="#onResetConfiguration"
