@@ -59,6 +59,7 @@
                     </children>
                 </HBox>
                 <Label fx:id="warningLabel" textFill="red"/>
+                <Button text="Sauvegarder" onAction="#onSaveConfig"/>
                 <Button text="Lancer la partie" onAction="#onStartGame"/>
             </children>
         </HBox>

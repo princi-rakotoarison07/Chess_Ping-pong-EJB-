@@ -18,7 +18,8 @@ public class GameSession {
 
     public static Map<String, Integer> whitePieceCounts = new HashMap<>();
     public static Map<String, Integer> blackPieceCounts = new HashMap<>();
-    public static Map<String, Integer> customMaxHealth = new HashMap<>();
+    public static Map<String, Integer> whiteCustomMaxHealth = new HashMap<>();
+    public static Map<String, Integer> blackCustomMaxHealth = new HashMap<>();
 
     public static Long gameId;
 
@@ -31,7 +32,8 @@ public class GameSession {
         speedMultiplier = 1.0;
         whitePieceCounts.clear();
         blackPieceCounts.clear();
-        customMaxHealth.clear();
+        whiteCustomMaxHealth.clear();
+        blackCustomMaxHealth.clear();
         gameId = null;
     }
 

@@ -1,2 +1,1 @@
-copy "D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\target\chess-ping-ejb.war" `
-     "O:\wildfly-37.0.1.Final\standalone\deployments\chess-ping-ejb.war"
+copy "D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\target\chess-ping-ejb.war"  "E:\wildfly-37.0.1.Final\standalone\deployments\chess-ping-ejb.war"

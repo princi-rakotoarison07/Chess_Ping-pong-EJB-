@@ -62,7 +62,8 @@ public class ConfigurationController {
     @FXML
     private Label warningLabel;
 
-    private boolean manualCountsOverride = false;
+    private boolean manualWhiteCountsOverride = false;
+    private boolean manualBlackCountsOverride = false;
 
     private final PieceTypeService pieceTypeService =
             new PieceTypeService("http://localhost:8080/chess-ping-ejb/api");
@@ -103,7 +104,7 @@ public class ConfigurationController {
             if (dto == null) return;
             Integer v = evt.getNewValue();
             dto.setCount(v != null && v >= 0 ? v : 0);
-            manualCountsOverride = true;
+            manualWhiteCountsOverride = true;
             whiteTable.refresh();
         });
 
@@ -113,7 +114,7 @@ public class ConfigurationController {
             if (dto == null) return;
             Integer v = evt.getNewValue();
             dto.setCount(v != null && v >= 0 ? v : 0);
-            manualCountsOverride = true;
+            manualBlackCountsOverride = true;
             blackTable.refresh();
         });
 
@@ -137,13 +138,15 @@ public class ConfigurationController {
 
         try {
             List<PieceTypeDTO> pieces = pieceTypeService.findAll();
-            // même liste de types pour Blancs et Noirs
-            var obs = FXCollections.observableArrayList(pieces);
-            whiteTable.setItems(obs);
-            blackTable.setItems(FXCollections.observableArrayList(pieces));
+            // Listes indépendantes (sinon l'édition d'un camp modifie l'autre)
+            var whiteObs = FXCollections.observableArrayList(clonePieceTypes(pieces));
+            var blackObs = FXCollections.observableArrayList(clonePieceTypes(pieces));
+            whiteTable.setItems(whiteObs);
+            blackTable.setItems(blackObs);
 
             // Calcul initial des nombres pour 8 colonnes
-            updateCountsForCols(8, pieces);
+            updateCountsForCols(8, whiteTable.getItems());
+            updateCountsForCols(8, blackTable.getItems());
         } catch (IOException | InterruptedException e) {
             warningLabel.setText("Erreur de chargement des pièces: " + e.getMessage());
             e.printStackTrace();
@@ -152,15 +155,32 @@ public class ConfigurationController {
         // Recalcule les nombres si l'utilisateur change le nombre de colonnes
         colsCombo.getSelectionModel().selectedItemProperty().addListener((obsSel, oldVal, newVal) -> {
             if (newVal != null && whiteTable.getItems() != null) {
-                if (!manualCountsOverride) {
+                if (!manualWhiteCountsOverride) {
                     updateCountsForCols(newVal, whiteTable.getItems());
-                    // reflète aussi sur la table noire
-                    if (blackTable.getItems() != null) {
-                        updateCountsForCols(newVal, blackTable.getItems());
-                    }
+                }
+                if (blackTable.getItems() != null && !manualBlackCountsOverride) {
+                    updateCountsForCols(newVal, blackTable.getItems());
                 }
             }
         });
+    }
+
+    private List<PieceTypeDTO> clonePieceTypes(List<PieceTypeDTO> pieces) {
+        if (pieces == null) return java.util.List.of();
+        java.util.List<PieceTypeDTO> out = new java.util.ArrayList<>(pieces.size());
+        for (PieceTypeDTO src : pieces) {
+            if (src == null) continue;
+            PieceTypeDTO dto = new PieceTypeDTO();
+            dto.setId(src.getId());
+            dto.setName(src.getName());
+            dto.setDisplayName(src.getDisplayName());
+            dto.setMaxHealth(src.getMaxHealth());
+            dto.setAttack(src.getAttack());
+            dto.setDefense(src.getDefense());
+            dto.setCount(src.getCount());
+            out.add(dto);
+        }
+        return out;
     }
 
     private void updateCountsForCols(int cols, List<PieceTypeDTO> pieces) {
@@ -268,7 +288,8 @@ public class ConfigurationController {
 
         GameSession.whitePieceCounts = new HashMap<>();
         GameSession.blackPieceCounts = new HashMap<>();
-        GameSession.customMaxHealth = new HashMap<>();
+        GameSession.whiteCustomMaxHealth = new HashMap<>();
+        GameSession.blackCustomMaxHealth = new HashMap<>();
 
         if (whiteTable.getItems() != null) {
             for (PieceTypeDTO dto : whiteTable.getItems()) {
@@ -277,7 +298,7 @@ public class ConfigurationController {
                 int count = dto.getCount() != null && dto.getCount() >= 0 ? dto.getCount() : 0;
                 int hp = dto.getMaxHealth() != null && dto.getMaxHealth() > 0 ? dto.getMaxHealth() : 1;
                 GameSession.whitePieceCounts.put(key, count);
-                GameSession.customMaxHealth.put(key, hp);
+                GameSession.whiteCustomMaxHealth.put(key, hp);
             }
         }
 
@@ -288,7 +309,7 @@ public class ConfigurationController {
                 int count = dto.getCount() != null && dto.getCount() >= 0 ? dto.getCount() : 0;
                 int hp = dto.getMaxHealth() != null && dto.getMaxHealth() > 0 ? dto.getMaxHealth() : 1;
                 GameSession.blackPieceCounts.put(key, count);
-                GameSession.customMaxHealth.put(key, hp);
+                GameSession.blackCustomMaxHealth.put(key, hp);
             }
         }
 
@@ -320,6 +341,37 @@ public class ConfigurationController {
             stage.setScene(scene);
         } catch (Exception e) {
             warningLabel.setText("Erreur lors du lancement de la partie: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void onSaveConfig() {
+        try {
+            java.util.Map<Integer, Integer> byId = new java.util.HashMap<>();
+            if (whiteTable.getItems() != null) {
+                for (PieceTypeDTO dto : whiteTable.getItems()) {
+                    if (dto == null || dto.getId() == null || dto.getMaxHealth() == null) continue;
+                    byId.put(dto.getId(), dto.getMaxHealth());
+                }
+            }
+            if (blackTable.getItems() != null) {
+                for (PieceTypeDTO dto : blackTable.getItems()) {
+                    if (dto == null || dto.getId() == null || dto.getMaxHealth() == null) continue;
+                    byId.put(dto.getId(), dto.getMaxHealth());
+                }
+            }
+
+            int updated = 0;
+            for (java.util.Map.Entry<Integer, Integer> e : byId.entrySet()) {
+                pieceTypeService.updateMaxHealth(e.getKey(), e.getValue());
+                updated++;
+            }
+            warningLabel.setText("Sauvegarde OK (" + updated + " types)");
+            warningLabel.setStyle("-fx-text-fill: #7CFC00;");
+        } catch (IOException | InterruptedException e) {
+            warningLabel.setText("Erreur lors de la sauvegarde: " + e.getMessage());
+            warningLabel.setStyle("-fx-text-fill: red;");
             e.printStackTrace();
         }
     }

@@ -28,4 +28,16 @@ public class PieceTypeEJB {
     public PieceType update(PieceType pt) {
         return em.merge(pt);
     }
+
+    public PieceType updateMaxHealth(Integer id, Integer maxHealth) {
+        PieceType pt = em.find(PieceType.class, id);
+        if (pt == null) {
+            return null;
+        }
+        if (maxHealth == null || maxHealth <= 0) {
+            throw new IllegalArgumentException("maxHealth must be > 0");
+        }
+        pt.setMaxHealth(maxHealth);
+        return em.merge(pt);
+    }
 }

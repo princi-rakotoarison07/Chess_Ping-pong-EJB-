@@ -217,6 +217,13 @@ public class GameViewController {
         attachBallToPaddle(currentServer);
     }
 
+    private void endGame(String winnerColor) {
+        gamePhase = GamePhase.GAME_OVER;
+        ballVX = 0;
+        ballVY = 0;
+        statusLabel.setText("Partie terminée - Vainqueur: " + winnerColor);
+    }
+
     private void loadImages() {
         System.out.println("[GameView] Chargement des images de pièces...");
         // Pièces
@@ -391,9 +398,12 @@ public class GameViewController {
         return 0;
     }
 
-    private int getHpForType(String type) {
+    private int getHpForType(String type, String color) {
         if (type == null) return 1;
-        int hp = getCountIgnoreCase(GameSession.customMaxHealth, type);
+        Map<String, Integer> src = ("BLACK".equalsIgnoreCase(color))
+                ? GameSession.blackCustomMaxHealth
+                : GameSession.whiteCustomMaxHealth;
+        int hp = getCountIgnoreCase(src, type);
         return hp > 0 ? hp : 1;
     }
 
@@ -423,7 +433,7 @@ public class GameViewController {
                 Image img = pieceImages.get(imgKey);
                 if (img == null) continue;
 
-                int hp = getHpForType(type);
+                int hp = getHpForType(type, "WHITE");
 
                 GamePiece gp = new GamePiece();
                 gp.image = img;
@@ -443,7 +453,7 @@ public class GameViewController {
                 Image img = pieceImages.get("PAWN_WHITE");
                 if (img == null) continue;
 
-                int hp = getHpForType("PAWN");
+                int hp = getHpForType("PAWN", "WHITE");
 
                 GamePiece gp = new GamePiece();
                 gp.image = img;
@@ -467,7 +477,7 @@ public class GameViewController {
                 Image img = pieceImages.get(imgKey);
                 if (img == null) continue;
 
-                int hp = getHpForType(type);
+                int hp = getHpForType(type, "WHITE");
 
                 GamePiece gp = new GamePiece();
                 gp.image = img;
@@ -503,7 +513,7 @@ public class GameViewController {
                 Image img = pieceImages.get(imgKey);
                 if (img == null) continue;
 
-                int hp = getHpForType(type);
+                int hp = getHpForType(type, "BLACK");
 
                 GamePiece gp = new GamePiece();
                 gp.image = img;
@@ -522,7 +532,7 @@ public class GameViewController {
                 Image img = pieceImages.get("PAWN_BLACK");
                 if (img == null) continue;
 
-                int hp = getHpForType("PAWN");
+                int hp = getHpForType("PAWN", "BLACK");
 
                 GamePiece gp = new GamePiece();
                 gp.image = img;
@@ -546,7 +556,7 @@ public class GameViewController {
                 Image img = pieceImages.get(imgKey);
                 if (img == null) continue;
 
-                int hp = getHpForType(type);
+                int hp = getHpForType(type, "BLACK");
 
                 GamePiece gp = new GamePiece();
                 gp.image = img;
@@ -650,6 +660,9 @@ public class GameViewController {
         // Collision balle / pièces (cercle-rectangle)
         List<GamePiece> toRemove = new ArrayList<>();
         for (GamePiece gp : pieces) {
+            if (gamePhase == GamePhase.GAME_OVER) {
+                break;
+            }
             double px = gp.x;
             double py = gp.y;
             double pw = CELL_SIZE;
@@ -693,6 +706,8 @@ public class GameViewController {
                                 toRemove.add(gp);
                                 if ("KING".equalsIgnoreCase(gp.type)) {
                                     statusLabel.setText("Roi " + gp.color + " capturé !");
+                                    String winner = "WHITE".equalsIgnoreCase(gp.color) ? "BLACK" : "WHITE";
+                                    endGame(winner);
                                 }
                             }
                         } catch (IOException | InterruptedException e) {
@@ -704,6 +719,8 @@ public class GameViewController {
                             toRemove.add(gp);
                             if ("KING".equalsIgnoreCase(gp.type)) {
                                 statusLabel.setText("Roi " + gp.color + " capturé !");
+                                String winner = "WHITE".equalsIgnoreCase(gp.color) ? "BLACK" : "WHITE";
+                                endGame(winner);
                             }
                         }
                     }
