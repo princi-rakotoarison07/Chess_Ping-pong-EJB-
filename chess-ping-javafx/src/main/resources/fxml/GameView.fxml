@@ -19,6 +19,12 @@
                         <Label fx:id="powerThresholdLabel" text="10" style="-fx-text-fill: white;"/>
                         <Button fx:id="powerPlusButton" text="+" onAction="#onPowerPlus"
                                 style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                        <Label text="Dégâts:" style="-fx-text-fill: white;"/>
+                        <Button fx:id="powerDamageMinusButton" text="-" onAction="#onPowerDamageMinus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                        <Label fx:id="powerDamageLabel" text="3" style="-fx-text-fill: white;"/>
+                        <Button fx:id="powerDamagePlusButton" text="+" onAction="#onPowerDamagePlus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
                         <ProgressBar fx:id="powerProgressBar" prefWidth="180" prefHeight="12" />
                     </children>
                 </HBox>

@@ -49,6 +49,15 @@ public class GameViewController {
     private Button powerPlusButton;
 
     @FXML
+    private Button powerDamageMinusButton;
+
+    @FXML
+    private Label powerDamageLabel;
+
+    @FXML
+    private Button powerDamagePlusButton;
+
+    @FXML
     private ProgressBar powerProgressBar;
 
     @FXML
@@ -118,7 +127,6 @@ public class GameViewController {
     private boolean powerAvailable = false;
     private PaddleSide activePowerPaddle = PaddleSide.NONE;
 
-    private static final int POWER_DAMAGE_PER_USE = 3;
     private static final double POWER_BAR_HEIGHT = 14;
 
     private String powerMessage = null;
@@ -245,6 +253,9 @@ public class GameViewController {
         if (powerThresholdLabel != null) {
             powerThresholdLabel.setText(String.valueOf(threshold));
         }
+        if (powerDamageLabel != null) {
+            powerDamageLabel.setText(String.valueOf(Math.max(1, GameSession.powerDamage)));
+        }
         double ratio = Math.max(0, Math.min(1.0, (double) GameSession.powerProgress / (double) threshold));
         powerProgressBar.setProgress(ratio);
 
@@ -275,6 +286,27 @@ public class GameViewController {
     @FXML
     private void onPowerPlus() {
         applyPowerThreshold(GameSession.powerThreshold + 1);
+        if (gameCanvas != null) {
+            gameCanvas.requestFocus();
+        }
+    }
+
+    private void applyPowerDamage(int newDamage) {
+        GameSession.powerDamage = Math.max(1, newDamage);
+        updatePowerUi();
+    }
+
+    @FXML
+    private void onPowerDamageMinus() {
+        applyPowerDamage(GameSession.powerDamage - 1);
+        if (gameCanvas != null) {
+            gameCanvas.requestFocus();
+        }
+    }
+
+    @FXML
+    private void onPowerDamagePlus() {
+        applyPowerDamage(GameSession.powerDamage + 1);
         if (gameCanvas != null) {
             gameCanvas.requestFocus();
         }
@@ -825,6 +857,38 @@ public class GameViewController {
                 double relY = ballY - centerY;
                 boolean sideHit = Math.abs(relX) > Math.abs(relY);
 
+                if (ballPowerMode) {
+                    String targetColor;
+                    if (activePowerPaddle == PaddleSide.RED) {
+                        targetColor = "BLACK";
+                    } else if (activePowerPaddle == PaddleSide.BLUE) {
+                        targetColor = "WHITE";
+                    } else {
+                        targetColor = null;
+                    }
+
+                    boolean isTarget = targetColor == null || (gp.color != null && targetColor.equalsIgnoreCase(gp.color));
+                    if (!isTarget) {
+                        // En mode pouvoir (option 2): rebondir sur ses propres pièces sans infliger de dégâts.
+                        if (sideHit) {
+                            if (dx > 0) {
+                                ballX = closestX + BALL_RADIUS;
+                            } else {
+                                ballX = closestX - BALL_RADIUS;
+                            }
+                            ballVX = -ballVX;
+                        } else {
+                            if (dy > 0) {
+                                ballY = closestY + BALL_RADIUS;
+                            } else {
+                                ballY = closestY - BALL_RADIUS;
+                            }
+                            ballVY = -ballVY;
+                        }
+                        break;
+                    }
+                }
+
                 // 1 seul dégât par "attaque": cooldown par pièce
                 int pieceKey = (gp.stateId > 0) ? gp.stateId : System.identityHashCode(gp);
                 long now = System.nanoTime();
@@ -961,19 +1025,8 @@ public class GameViewController {
         }
 
         // paddles (rouge en haut intérieur, bleu en bas intérieur)
-        if (activePowerPaddle == PaddleSide.RED) {
-            gc.setStroke(Color.GOLD);
-            gc.setLineWidth(3);
-            gc.strokeRoundRect(paddleRedX - 3, paddleRedY - 3, PADDLE_WIDTH + 6, PADDLE_HEIGHT + 6, 8, 8);
-        }
         gc.setFill(Color.RED);
         gc.fillRect(paddleRedX, paddleRedY, PADDLE_WIDTH, PADDLE_HEIGHT);
-
-        if (activePowerPaddle == PaddleSide.BLUE) {
-            gc.setStroke(Color.GOLD);
-            gc.setLineWidth(3);
-            gc.strokeRoundRect(paddleBlueX - 3, paddleBlueY - 3, PADDLE_WIDTH + 6, PADDLE_HEIGHT + 6, 8, 8);
-        }
         gc.setFill(Color.BLUE);
         gc.fillRect(paddleBlueX, paddleBlueY, PADDLE_WIDTH, PADDLE_HEIGHT);
 
@@ -1012,7 +1065,7 @@ public class GameViewController {
             GameSession.powerProgress = 0;
 
             ballPowerMode = true;
-            powerDamageRemaining = POWER_DAMAGE_PER_USE;
+            powerDamageRemaining = Math.max(1, GameSession.powerDamage);
             normalBallColor = ballColor;
             ballColor = Color.LIMEGREEN;
 

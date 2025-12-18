@@ -23,6 +23,7 @@ public class GameSession {
 
     public static int powerThreshold = 10;
     public static int powerProgress = 0;
+    public static int powerDamage = 3;
 
     public static Long gameId;
 
@@ -39,6 +40,7 @@ public class GameSession {
         blackCustomMaxHealth.clear();
         powerThreshold = 10;
         powerProgress = 0;
+        powerDamage = 3;
         gameId = null;
     }
 
