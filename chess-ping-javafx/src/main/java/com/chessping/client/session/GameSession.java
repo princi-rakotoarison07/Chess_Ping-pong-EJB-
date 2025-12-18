@@ -21,6 +21,9 @@ public class GameSession {
     public static Map<String, Integer> whiteCustomMaxHealth = new HashMap<>();
     public static Map<String, Integer> blackCustomMaxHealth = new HashMap<>();
 
+    public static int powerThreshold = 10;
+    public static int powerProgress = 0;
+
     public static Long gameId;
 
     public static void reset() {
@@ -34,6 +37,8 @@ public class GameSession {
         blackPieceCounts.clear();
         whiteCustomMaxHealth.clear();
         blackCustomMaxHealth.clear();
+        powerThreshold = 10;
+        powerProgress = 0;
         gameId = null;
     }
 

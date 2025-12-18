@@ -14,6 +14,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -28,6 +29,9 @@ public class ConfigurationController {
 
     @FXML
     private ComboBox<Integer> colsCombo;
+
+    @FXML
+    private TextField powerThresholdField;
 
     @FXML
     private TableView<PieceTypeDTO> whiteTable;
@@ -163,6 +167,11 @@ public class ConfigurationController {
                 }
             }
         });
+
+        if (powerThresholdField != null) {
+            int v = GameSession.powerThreshold > 0 ? GameSession.powerThreshold : 10;
+            powerThresholdField.setText(String.valueOf(v));
+        }
     }
 
     private List<PieceTypeDTO> clonePieceTypes(List<PieceTypeDTO> pieces) {
@@ -279,6 +288,16 @@ public class ConfigurationController {
         if (cols == null) cols = 8;
 
         GameSession.setBoardCols(cols);
+
+        if (powerThresholdField != null) {
+            int parsed = 10;
+            try {
+                parsed = Integer.parseInt(powerThresholdField.getText() != null ? powerThresholdField.getText().trim() : "10");
+            } catch (NumberFormatException ignored) {
+                parsed = 10;
+            }
+            GameSession.powerThreshold = Math.max(1, parsed);
+        }
 
         if (blackStartsRadio != null && blackStartsRadio.isSelected()) {
             GameSession.firstServer = "BLACK";

@@ -17,5 +17,6 @@ com\chessping\client\MainApp.class
 com\chessping\client\ui\PlayerSelectionController$1.class
 com\chessping\client\model\GamePieceStateDTO.class
 com\chessping\client\service\GameStateService$1.class
+com\chessping\client\ui\GameViewController$PaddleSide.class
 com\chessping\client\ui\ConfigurationController.class
 com\chessping\client\ui\NetworkSetupController.class
