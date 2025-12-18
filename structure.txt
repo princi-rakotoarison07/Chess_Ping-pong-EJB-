@@ -1,11 +1,11 @@
 Chess-Ping-Java/
   README.md                              (description projet, instructions build/deploy)
-  ARCHITECTURE_DIAGRAM.md                (architecture globale : JavaFX + EJB + MySQL)
+  ARCHITECTURE_DIAGRAM.md                (architecture globale : JavaFX + EJB + Postgres)
   
   pom.xml                                (Maven - gestion dépendances globale)
   
   chess-ping-ejb/                        (Module EJB - Logique métier + accès données)
-    pom.xml                              (dépendances : JavaEE-API, MySQL driver)
+    pom.xml                              (dépendances : JavaEE-API, Postgres driver)
     src/
       main/
         java/
@@ -48,7 +48,7 @@ Chess-Ping-Java/
                   GameConverter.java     (conversion Game + GamePieceState -> Board)
         resources/
           META-INF/
-            persistence.xml              (config JPA + datasource MySQL)
+            persistence.xml              (config JPA + datasource PostgresL)
     
   chess-ping-javafx/                     (Module JavaFX - Interface client)
     pom.xml                              (dépendances : JavaFX, HTTP client, JSON)
@@ -151,17 +151,17 @@ Chess-Ping-Java/
   deploy.sh                              (Version Linux/Mac du script)
   
   config/
-    wildfly-datasource.xml               (Config datasource MySQL pour WildFly)
+    wildfly-datasource.xml               (Config datasource PostgresL pour WildFly)
     application.properties               (Config globale application)
   
   database/
-    schema.sql                           (Script création tables MySQL fourni)
+    schema.sql                           (Script création tables PostgresL fourni)
     data.sql                             (INSERT piece_type déjà fourni)
     README.md                            (instructions création DB)
   
   docs/
     API_DOCUMENTATION.md                 (Documentation endpoints REST)
-    DEPLOYMENT_GUIDE.md                  (Guide déploiement WildFly + MySQL)
+    DEPLOYMENT_GUIDE.md                  (Guide déploiement WildFly + PostgresL)
     DATABASE_SCHEMA.md                   (Explication structure DB)
     USER_GUIDE.md                        (Guide utilisateur)
 
