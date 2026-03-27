@@ -1,0 +1,18 @@
+/subsystem=datasources/jdbc-driver=mysql:add(driver-name=mysql,driver-module-name=com.mysql,driver-class-name=com.mysql.cj.jdbc.Driver)
+
+/subsystem=datasources/data-source=ChessPingMySQLDS:add(
+    jndi-name=java:jboss/datasources/ChessPingMySQLDS,
+    enabled=true,
+    driver-name=mysql,
+    connection-url=jdbc:mysql://localhost:3306/chess_ping_mysql,
+    user-name=chessuser,
+    password=chess123,
+    min-pool-size=5,
+    max-pool-size=20,
+    validate-on-match=true,
+    background-validation=true,
+    valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker,
+    exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter
+)
+
+:reload

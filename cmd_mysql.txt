@@ -1,0 +1,22 @@
+# Pour vous connecter avec chessuser
+mysql -u chessuser -pchess123
+
+# Pour vérifier les privilèges
+SHOW GRANTS FOR 'chessuser'@'localhost';
+
+# Pour créer/modifier la base
+CREATE DATABASE IF NOT EXISTS chess_ping_mysql;
+USE chess_ping_mysql;
+
+
+                <!-- Datasource MySQL avec syntaxe corrigée -->
+                <datasource jndi-name="java:jboss/datasources/ChessPingMySQLDS" pool-name="ChessPingMySQLDS" enabled="true" use-java-context="true" statistics-enabled="${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}}">
+                    <connection-url>jdbc:mysql://localhost:3306/chess_ping_mysql</connection-url>
+                    <driver>mysql</driver>
+                    <security user-name="chessuser" password="chess123"/>
+                    <validation>
+                        <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker"/>
+                        <background-validation>true</background-validation>
+                        <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter"/>
+                    </validation>
+                </datasource>

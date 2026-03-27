@@ -1,0 +1,13 @@
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\entity\Game.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\entity\GamePieceState.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\entity\PieceType.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\entity\Player.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\rest\ChessPingApplication.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\rest\GameResource.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\rest\GameStateResource.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\rest\PieceTypeResource.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\rest\PlayerResource.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\session\GameEJB.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\session\GameStateEJB.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\session\PieceTypeEJB.java
+D:\mahasoa\ITU\S5\INFO301-ArchiLog\Chess_Ping-pong-EJB-\chess-ping-ejb\src\main\java\com\chessping\ejb\session\PlayerEJB.java

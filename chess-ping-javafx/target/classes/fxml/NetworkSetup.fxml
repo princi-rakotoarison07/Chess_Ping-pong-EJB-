@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.chessping.client.ui.NetworkSetupController"
+      spacing="10" alignment="CENTER">
+    <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+    <children>
+        <Label text="Rejoindre une partie" style="-fx-font-size: 24px; -fx-text-fill: white;"/>
+
+        <HBox spacing="10" alignment="CENTER">
+            <children>
+                <Label text="Adresse IP:" style="-fx-text-fill: white;"/>
+                <TextField fx:id="ipField" text="127.0.0.1" prefWidth="200"/>
+            </children>
+        </HBox>
+
+        <HBox spacing="10" alignment="CENTER">
+            <children>
+                <Label text="Port:" style="-fx-text-fill: white;"/>
+                <TextField fx:id="portField" text="5050" prefWidth="100"/>
+            </children>
+        </HBox>
+
+        <Button text="Se connecter" onAction="#onConnect"/>
+        <Label fx:id="errorLabel" textFill="red"/>
+    </children>
+</VBox>

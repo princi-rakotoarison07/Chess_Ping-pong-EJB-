@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.canvas.Canvas?>
+ <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chessping.client.ui.GameViewController">
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="game-header">
+            <children>
+                <Label fx:id="scoreLabel" text="Score" style="-fx-text-fill: white;"/>
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Seuil:" style="-fx-text-fill: white;"/>
+                        <Button fx:id="powerMinusButton" text="-" onAction="#onPowerMinus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                        <Label fx:id="powerThresholdLabel" text="10" style="-fx-text-fill: white;"/>
+                        <Button fx:id="powerPlusButton" text="+" onAction="#onPowerPlus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                        <Label text="Dégâts:" style="-fx-text-fill: white;"/>
+                        <Button fx:id="powerDamageMinusButton" text="-" onAction="#onPowerDamageMinus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                        <Label fx:id="powerDamageLabel" text="3" style="-fx-text-fill: white;"/>
+                        <Button fx:id="powerDamagePlusButton" text="+" onAction="#onPowerDamagePlus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                        <ProgressBar fx:id="powerProgressBar" prefWidth="180" prefHeight="12" />
+                    </children>
+                </HBox>
+                <HBox spacing="4" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Vitesse:" style="-fx-text-fill: white;"/>
+                        <Button fx:id="speedMinusButton" text="-" onAction="#onSpeedMinus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                        <Label fx:id="speedLabel" text="x1.0" style="-fx-text-fill: white;"/>
+                        <Button fx:id="speedPlusButton" text="+" onAction="#onSpeedPlus"
+                                style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                    </children>
+                </HBox>
+                <Button fx:id="resetGameButton" text="Reset" onAction="#onResetGame"
+                        style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                <Button fx:id="resetConfigButton" text="Config" onAction="#onResetConfiguration"
+                        style="-fx-font-size: 10px; -fx-padding: 2 6 2 6;"/>
+                <Label fx:id="statusLabel" text="Status" style="-fx-text-fill: white;"/>
+            </children>
+        </HBox>
+    </top>
+
+    <center>
+        <StackPane>
+            <children>
+                <Canvas fx:id="gameCanvas" width="900" height="600" />
+            </children>
+        </StackPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER" styleClass="game-footer">
+            <children>
+                <Label text="Footer configuration" style="-fx-text-fill: white;"/>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

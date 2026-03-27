@@ -1,10 +1,10 @@
 -- Création de la base (adapter le nom si besoin)
-CREATE DATABASE IF NOT EXISTS chess_ping;
-USE chess_ping;
+CREATE DATABASE chess_ping;
+-- Connectez-vous ensuite à la base chess_ping avant d'exécuter le reste du script.
 
 -- 1) Types de pièces (configuration : points de vie, etc.)
 CREATE TABLE piece_type (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
+    id          SERIAL PRIMARY KEY,
     name        VARCHAR(20) NOT NULL UNIQUE,  -- 'KING', 'QUEEN', ...
     display_name VARCHAR(50) NOT NULL,        -- 'Roi', 'Reine', ...
     max_health  INT NOT NULL,                 -- vie maximale du type de pièce
@@ -23,27 +23,33 @@ INSERT INTO piece_type (name, display_name, max_health, attack, defense) VALUES
 
 -- 2) Joueurs
 CREATE TABLE player (
-    id        INT AUTO_INCREMENT PRIMARY KEY,
+    id        SERIAL PRIMARY KEY,
     name      VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Données de test pour les joueurs
+INSERT INTO player (name) VALUES
+('Alice'),
+('Bob'),
+('Charlie');
+
 -- 3) Partie (sauvegarde globale)
 CREATE TABLE game (
-    id            INT AUTO_INCREMENT PRIMARY KEY,
+    id            SERIAL PRIMARY KEY,
     player_white  INT NOT NULL,
     player_black  INT NOT NULL,
     status        VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS', -- IN_PROGRESS, FINISHED, etc.
     current_turn  VARCHAR(5) NOT NULL DEFAULT 'WHITE',        -- à qui le tour
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (player_white) REFERENCES player(id),
     FOREIGN KEY (player_black) REFERENCES player(id)
 );
 
 -- 4) État des pièces dans une sauvegarde
 CREATE TABLE game_piece_state (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
+    id           SERIAL PRIMARY KEY,
     game_id      INT NOT NULL,
     piece_type_id INT NOT NULL,
     color        VARCHAR(5) NOT NULL,  -- 'WHITE' ou 'BLACK'

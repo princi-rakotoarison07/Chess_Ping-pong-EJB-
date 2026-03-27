@@ -1,0 +1,33 @@
+.root {
+    -fx-background-color: linear-gradient(to bottom, #141428, #0a0a16);
+}
+
+.game-header {
+    -fx-background-color: rgba(0, 0, 0, 0.8);
+    -fx-padding: 8 12 8 12;
+}
+
+.game-footer {
+    -fx-background-color: rgba(0, 0, 0, 0.6);
+    -fx-padding: 8 12 8 12;
+}
+
+.light-square {
+    -fx-background-color: #f0d9b5; /* beige */
+}
+
+.dark-square {
+    -fx-background-color: #b58863; /* marron */
+}
+
+.hp-bar .bar {
+    -fx-background-color: #00c800;
+}
+
+.paddle-left {
+    -fx-background-color: #ff3333;
+}
+
+.paddle-right {
+    -fx-background-color: #3366ff;
+}
